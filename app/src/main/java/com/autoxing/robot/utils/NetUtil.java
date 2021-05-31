@@ -1,10 +1,14 @@
 package com.autoxing.robot.utils;
 import com.alibaba.fastjson.JSON;
 import okhttp3.*;
+import okhttp3.internal.http.HttpMethod;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class NetUtil {
 
@@ -36,13 +40,56 @@ public class NetUtil {
     public static String syncReq(String url) {
         return NetUtil.syncReq(url,HTTP_METHOD.get);
     }
-
     public static String syncReq(String url,HTTP_METHOD HttpMethod) {
         return NetUtil.syncReq(url,null,HttpMethod);
     }
     public static String syncReq(String url,Map map) {
         return NetUtil.syncReq(url,map,HTTP_METHOD.post);
     }
+
+
+    public static <T> T syncReq(String url, Class<T> clazz){
+        return syncReq(url,null,HTTP_METHOD.get,clazz);
+    }
+    public static <T> T syncReq(String url,HTTP_METHOD method, Class<T> clazz){
+        return syncReq(url,null,method,clazz);
+    }
+    public static <T> T syncReq(String url,Map reqObj, Class<T> clazz){
+        return syncReq(url,reqObj,HTTP_METHOD.post,clazz);
+    }
+    public static <T> T syncReq(String url,Map reqObj,HTTP_METHOD method,Class<T> clazz) {
+        String res =  NetUtil.syncReq(url,reqObj,HTTP_METHOD.get);
+        res = lineToHump(res);
+        T t = null;
+        try {
+            t = JSON.parseObject(res, clazz);
+        } catch (Exception e){
+            //数据异常解析失败
+        }
+        return t;
+    }
+
+    public static <T>List<T> syncReqList(String url, Class<T> clazz){
+        return syncReqList(url,null,HTTP_METHOD.get,clazz);
+    }
+    public static <T>List<T> syncReqList(String url,HTTP_METHOD method, Class<T> clazz){
+        return syncReqList(url,null,method,clazz);
+    }
+    public static <T>List<T> syncReqList(String url,Map reqObj, Class<T> clazz){
+        return syncReqList(url,reqObj,HTTP_METHOD.post,clazz);
+    }
+    public static <T>List<T> syncReqList(String url, Map reqObj, HTTP_METHOD method, Class<T> clazz) {
+        String res =  NetUtil.syncReq(url,reqObj,method);
+        res = lineToHump(res);
+        List<T> ts = null;
+        try {
+            ts = JSON.parseArray(res, clazz);
+        } catch (Exception e){
+            //数据异常解析失败
+        }
+        return ts;
+    }
+
     public static String syncReq(String url , Map reqObj,HTTP_METHOD HttpMethod){
         String res = null;
         System.out.println("reqUrl:");
@@ -82,5 +129,21 @@ public class NetUtil {
         return res;
     }
 
+
+    private static Pattern linePattern = Pattern.compile("_(\\w)");
+    //下划线转驼峰
+    private static String lineToHump(String str) {
+        if(str==null){
+            str = "";
+        }
+        str = str.toLowerCase();
+        Matcher matcher = linePattern.matcher(str);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            matcher.appendReplacement(sb, matcher.group(1).toUpperCase());
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
+    }
 
 }
