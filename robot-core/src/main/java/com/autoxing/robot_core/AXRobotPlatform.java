@@ -9,7 +9,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.autoxing.robot_core.bean.ActionStatus;
 import com.autoxing.robot_core.bean.ChassisStatus;
 import com.autoxing.robot_core.bean.MoveAction;
-import com.autoxing.robot_core.bean.Line;
+import com.autoxing.robot_core.geometry.Line;
 import com.autoxing.robot_core.bean.Location;
 import com.autoxing.robot_core.bean.Map;
 import com.autoxing.robot_core.bean.Mapping;
@@ -350,7 +350,7 @@ public class AXRobotPlatform {
         return mPose;
     }
 
-    public void addLines(Line line) {
+    public void addLines(List<Line> lines) {
 
     }
 
