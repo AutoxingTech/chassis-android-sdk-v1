@@ -19,12 +19,13 @@ public class RobotUtil {
                 context.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        StringBuilder sb = new StringBuilder();
-                        sb.append(succ ? "succed" : "failed");
-                        sb.append(" to set ");
-                        sb.append(status.toString().toLowerCase());
-                        sb.append(" chassis status");
-                        Toast.makeText(context, sb.toString(),1200).show();
+                        if (!succ) {
+                            StringBuilder sb = new StringBuilder();
+                            sb.append("failed to set ");
+                            sb.append(status.toString().toLowerCase());
+                            sb.append(" chassis status");
+                            Toast.makeText(context, sb.toString(),1200).show();
+                        }
                     }
                 });
             }

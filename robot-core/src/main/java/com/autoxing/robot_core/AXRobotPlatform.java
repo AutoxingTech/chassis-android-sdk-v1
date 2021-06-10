@@ -293,23 +293,18 @@ public class AXRobotPlatform {
         return maps;
     }
 
-    public boolean setCurrentMap(int mapId, Pose pose) {
-        HashMap<String, Integer> hashmap = new HashMap();
-        hashmap.put("map_id", mapId);
-        Response res = NetUtil.syncReq2(NetUtil.url_chassis_current_map, hashmap, NetUtil.HTTP_METHOD.post);
-        if (res == null)
-            return false;
-
-        return  res.code() == 200;
-    }
-
     public boolean setCurrentMap(Map map, Pose pose) {
+        Response res = null;
+
         String data = map.getData();
         if (data == null) {
-            return false;
+            HashMap<String, Integer> hashmap = new HashMap();
+            hashmap.put("map_id", map.getId());
+            res = NetUtil.syncReq2(NetUtil.url_chassis_current_map, hashmap, NetUtil.HTTP_METHOD.post);
+        } else {
+            res = NetUtil.syncReq3(NetUtil.url_chassis_current_map, data, NetUtil.HTTP_METHOD.post);
         }
 
-        Response res = NetUtil.syncReq3(NetUtil.url_chassis_current_map, data, NetUtil.HTTP_METHOD.post);
         if (res == null)
             return false;
 

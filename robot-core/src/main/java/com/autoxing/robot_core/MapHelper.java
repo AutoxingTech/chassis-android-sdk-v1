@@ -4,6 +4,7 @@ import com.autoxing.robot_core.bean.Map;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 
 public class MapHelper {
 
@@ -17,7 +18,7 @@ public class MapHelper {
             fin.read(buff);
             fin.close();
             content = new String(buff,"UTF-8");
-        } catch (Exception e){
+        } catch (IOException e){
             e.printStackTrace();
             return null;
         }

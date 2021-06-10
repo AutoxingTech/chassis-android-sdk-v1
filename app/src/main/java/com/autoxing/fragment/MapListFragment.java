@@ -110,7 +110,7 @@ public class MapListFragment extends Fragment implements IMapAdapterListener {
         ThreadPoolUtil.run(new CommonCallBack() {
             @Override
             public void run() {
-                boolean succ = AXRobotPlatform.getInstance().setCurrentMap(map.getId(), null);
+                boolean succ = AXRobotPlatform.getInstance().setCurrentMap(map, null);
 
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
@@ -120,7 +120,7 @@ public class MapListFragment extends Fragment implements IMapAdapterListener {
                             intent.putExtra("url", map.getUrl());
                             intent.putExtra("id",map.getId());
                             intent.setClass(getActivity(), MapDetailActivity.class);
-                            MapDetailActivity.mMap = map;
+                            MapDetailActivity.selMap = map;
                             startActivity(intent);
                         } else {
                             StringBuilder sb = new StringBuilder();

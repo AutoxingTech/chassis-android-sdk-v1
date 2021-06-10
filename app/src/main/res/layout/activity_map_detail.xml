@@ -1,52 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<org.buraktamturk.loadingview.LoadingView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/loading_view"
-    app:lv_title="loading"
-    app:lv_loading="false"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tl="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_width="match_parent">
+    android:orientation="vertical">
 
-    <FrameLayout
-        android:id="@+id/fl_continer"
+    <com.autoxing.view.CustomViewPager
+        android:id="@+id/main_tab_content"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@color/content_background"/>
 
-        <ImageView
-            android:id="@+id/iv_map"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:src="@color/content_background"
-            android:clickable="true"/>
+    <com.flyco.tablayout.CommonTabLayout
+        android:id="@+id/tab_layout"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:background="@color/bar_color"
+        tl:tl_iconGravity="LEFT"
+        tl:tl_iconHeight="18dp"
+        tl:tl_iconMargin="5dp"
+        tl:tl_iconWidth="18dp"
+        tl:tl_indicator_bounce_enable="false"
+        tl:tl_indicator_color="#2C97DE"
+        tl:tl_indicator_gravity="TOP"
+        tl:tl_textSelectColor="#2C97DE"
+        tl:tl_textUnselectColor="#000000"
+        tl:tl_textsize="16sp"
+        tl:tl_underline_color="#DDDDDD"
+        tl:tl_underline_gravity="TOP"
+        tl:tl_underline_height="1dp"/>
 
-        <ImageView
-            android:id="@+id/iv_current_pos"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@mipmap/robot"
-            android:clickable="false"
-            android:visibility="gone"/>
-
-        <Button
-            android:id="@+id/btn_move"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="20dp"
-            android:layout_marginBottom="30dp"
-            android:layout_alignParentRight="true"
-            android:layout_gravity="bottom|right"
-            android:clickable="false"
-            android:background="@drawable/btn_selector"
-            android:text="Move"/>
-
-        <TextView
-            android:id="@+id/tv_screen_value"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="20dp"
-            android:layout_marginBottom="30dp"
-            android:layout_alignBaseline="@id/btn_move"
-            android:layout_gravity="bottom"/>
-
-    </FrameLayout>
-</org.buraktamturk.loadingview.LoadingView>
+</LinearLayout>
