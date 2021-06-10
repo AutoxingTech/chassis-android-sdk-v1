@@ -11,6 +11,7 @@ android {
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
+        multiDexEnabled true
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -31,15 +32,35 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation 'androidx.appcompat:appcompat:1.0.2'
+    def recyclerViewVersion = '1.0.0'
+    implementation "androidx.recyclerview:recyclerview:$recyclerViewVersion"
+    implementation "androidx.recyclerview:recyclerview-selection:$recyclerViewVersion"
+    implementation "androidx.cardview:cardview:1.0.0"
+
+    implementation 'com.scwang.smart:refresh-layout-kernel:2.0.3'      //核心必须依赖
+    implementation 'com.scwang.smart:refresh-header-classics:2.0.3'    //经典刷新头
+
+    implementation 'com.github.siyamed:android-shape-imageview:0.9.+@aar'
+
+    implementation 'org.buraktamturk:loadingview:1.0.0@aar'
+
+    implementation 'com.github.bumptech.glide:glide:4.0.0'
+
+    implementation 'com.github.kongqw:AndroidRocker:1.0.1'
+
+    implementation 'com.flyco.tablayout:FlycoTabLayout_Lib:2.1.2@aar'
+
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
-    implementation "com.squareup.okhttp3:okhttp:4.8.0"
-    implementation 'com.squareup.okio:okio:1.17.4'
-    implementation "org.java-websocket:Java-WebSocket:1.4.0"
-    implementation 'com.alibaba:fastjson:1.1.54.android'
-    implementation 'com.google.android.material:material:1.0.0'
     implementation 'androidx.navigation:navigation-fragment:2.0.0'
     implementation 'androidx.navigation:navigation-ui:2.0.0'
+
+    implementation project(path: ':robot-core')
+    implementation 'com.squareup.okhttp3:okhttp:5.0.0-alpha.2'
+    implementation 'com.squareup.okio:okio:3.0.0-alpha.1'
+    implementation 'com.alibaba:fastjson:1.2.75'
+
+    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'com.google.android.material:material:1.0.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'

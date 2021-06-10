@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<org.buraktamturk.loadingview.LoadingView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/loading_view"
+    app:lv_title="loading"
+    app:lv_loading="false"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/iv_mapping"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleY="-1" />
+
+        <Button
+            android:id="@+id/btn_start"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="30dp"
+            android:layout_marginLeft="50dp"
+            android:layout_gravity="bottom"
+            android:background="@drawable/btn_selector"
+            android:text="start"/>
+
+        <Button
+            android:id="@+id/btn_stop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right|bottom"
+            android:layout_marginBottom="30dp"
+            android:layout_marginRight="50dp"
+            android:background="@drawable/btn_selector"
+            android:text="stop"/>
+
+        <ImageView
+            android:id="@+id/iv_current_pos"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:visibility="gone"
+            android:src="@mipmap/robot" />
+
+    </FrameLayout>
+
+</org.buraktamturk.loadingview.LoadingView>
