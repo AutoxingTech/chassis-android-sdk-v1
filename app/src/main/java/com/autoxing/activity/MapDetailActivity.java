@@ -13,6 +13,7 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.autoxing.controller.R;
 import com.autoxing.fragment.MapAutoFragment;
+import com.autoxing.fragment.MapManualFragment;
 import com.autoxing.fragment.MapRemoteFragment;
 import com.autoxing.robot_core.AXRobotPlatform;
 import com.autoxing.robot_core.bean.ChassisStatus;
@@ -33,14 +34,14 @@ public class MapDetailActivity extends BaseActivity {
 
     public static Map selMap = null;
 
-    private String mTitles[] = { "Auto", "Remote" };
+    private String mTitles[] = { "Auto", "Remote", "Manual" };
     private ArrayList<CustomTabEntity> mTabEntities = new ArrayList<>();
     private List<Fragment> mTabFragmentList = new ArrayList<>();
 
     private int[] mIconUnselectIds = {
-            R.mipmap.tab_home_unselect, R.mipmap.tab_more_unselect};
+            R.mipmap.tab_home_unselect, R.mipmap.tab_more_unselect, R.mipmap.tab_contact_unselect };
     private int[] mIconSelectIds = {
-            R.mipmap.tab_home_select, R.mipmap.tab_more_select};
+            R.mipmap.tab_home_select, R.mipmap.tab_more_select,R.mipmap.tab_contact_select };
 
     private View mLayout = null;
     private CommonTabLayout mTabLayout;
@@ -69,6 +70,7 @@ public class MapDetailActivity extends BaseActivity {
 
         mTabFragmentList.add(new MapAutoFragment(selMap));
         mTabFragmentList.add(new MapRemoteFragment());
+        mTabFragmentList.add(new MapManualFragment(selMap));
         mViewPager.setAdapter(new FragmentPagerAdapter(getSupportFragmentManager(),
                 FragmentPagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
             @NonNull

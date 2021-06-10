@@ -116,6 +116,7 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
     }
 
     private void setListener() {
+        mBtnMove.setOnClickListener(this);
         mIvMap.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -295,10 +296,14 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("robot status is ");
-                        sb.append(moveAction.getStatus().toString());
-                        Toast.makeText(getContext(), sb.toString(), Toast.LENGTH_SHORT).show();
+                        String content = "failed to move to dest!";
+                        if (moveAction != null) {
+                            StringBuilder sb = new StringBuilder();
+                            sb.append("robot status is ");
+                            sb.append(moveAction.getStatus().toString());
+                            content = sb.toString();
+                        }
+                        Toast.makeText(getContext(), content, Toast.LENGTH_SHORT).show();
                         mLoadingView.setLoading(false);
                     }
                 });
