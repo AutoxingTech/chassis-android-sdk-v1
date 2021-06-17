@@ -18,8 +18,9 @@ import com.autoxing.adapter.MapRvAdapter;
 import com.autoxing.controller.R;
 import com.autoxing.robot_core.AXRobotPlatform;
 import com.autoxing.robot_core.bean.Map;
-import com.autoxing.x.util.CommonCallBack;
-import com.autoxing.x.util.ThreadPoolUtil;
+import com.autoxing.robot_core.bean.Pose;
+import com.autoxing.robot_core.util.CommonCallback;
+import com.autoxing.robot_core.util.ThreadPoolUtil;
 import com.scwang.smart.refresh.layout.api.RefreshLayout;
 import com.scwang.smart.refresh.layout.listener.OnRefreshListener;
 
@@ -83,7 +84,7 @@ public class MapListFragment extends Fragment implements IMapAdapterListener {
     }
 
     private void initMaps() {
-        ThreadPoolUtil.run(new CommonCallBack() {
+        ThreadPoolUtil.runAsync(new CommonCallback() {
             @Override
             public void run() {
                 List<Map> maps = AXRobotPlatform.getInstance().getMaps();
@@ -93,6 +94,7 @@ public class MapListFragment extends Fragment implements IMapAdapterListener {
                     public void run() {
                         if (maps == null) {
                             mSwipeRefreshWidget.finishRefresh(false);
+                            Toast.makeText(getContext(),"failed to load maps", Toast.LENGTH_SHORT).show();
                         } else {
                             mMapAdapter.setMaps(maps);
                             mMapAdapter.notifyDataSetChanged();
@@ -107,10 +109,10 @@ public class MapListFragment extends Fragment implements IMapAdapterListener {
     @Override
     public void setMapOnClicked(Map map) {
         mLoadingView.setLoading(true);
-        ThreadPoolUtil.run(new CommonCallBack() {
+        ThreadPoolUtil.runAsync(new CommonCallback() {
             @Override
             public void run() {
-                boolean succ = AXRobotPlatform.getInstance().setCurrentMap(map, null);
+                boolean succ = AXRobotPlatform.getInstance().setCurrentMap(map, new Pose());
 
                 getActivity().runOnUiThread(new Runnable() {
                     @Override

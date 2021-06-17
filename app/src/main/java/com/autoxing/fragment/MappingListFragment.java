@@ -18,8 +18,8 @@ import com.autoxing.controller.R;
 import com.autoxing.robot_core.AXRobotPlatform;
 import com.autoxing.robot_core.bean.Map;
 import com.autoxing.robot_core.bean.Mapping;
-import com.autoxing.x.util.CommonCallBack;
-import com.autoxing.x.util.ThreadPoolUtil;
+import com.autoxing.robot_core.util.CommonCallback;
+import com.autoxing.robot_core.util.ThreadPoolUtil;
 import com.scwang.smart.refresh.layout.api.RefreshLayout;
 import com.scwang.smart.refresh.layout.listener.OnRefreshListener;
 
@@ -84,16 +84,17 @@ public class MappingListFragment extends Fragment implements IMappingAdapterList
     }
 
     private void initMappingTasks() {
-        ThreadPoolUtil.run(new CommonCallBack() {
+        ThreadPoolUtil.runAsync(new CommonCallback() {
             @Override
             public void run() {
-                List<Mapping> mappings = AXRobotPlatform.getInstance().getMappingTasks();
+                List<Mapping> mappings = AXRobotPlatform.getInstance().getMappings();
 
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         if (mappings == null) {
                             mSwipeRefreshWidget.finishRefresh(false);
+                            Toast.makeText(getContext(), "failed to load mappings", Toast.LENGTH_SHORT).show();
                         } else {
                             mMappingAdapter.setMappingTasks(mappings);
                             mMappingAdapter.notifyDataSetChanged();
@@ -121,7 +122,7 @@ public class MappingListFragment extends Fragment implements IMappingAdapterList
                         mLoadingView.setLoading(true);
                         String mapName = dialog.getMapName().getText().toString();
 
-                        ThreadPoolUtil.run(new CommonCallBack() {
+                        ThreadPoolUtil.runAsync(new CommonCallback() {
                             @Override
                             public void run() {
                                 Map map = mapping.saveToMap(mapName);
@@ -134,7 +135,7 @@ public class MappingListFragment extends Fragment implements IMappingAdapterList
                                         sb.append(" to save mapping ");
                                         sb.append(mapping.getId());
                                         sb.append(" to map <");
-                                        sb.append(mapName);
+                                        sb.append(mapName != null && !mapName.trim().isEmpty() ? mapName : "newmap" + mapping.getId());
                                         sb.append(">");
                                         Toast.makeText(getActivity(), sb.toString(),1200).show();
                                         dialog.dismiss();

@@ -1,14 +1,11 @@
 package com.autoxing.robot_core;
 
-import android.os.Handler;
-import android.os.Message;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.autoxing.robot_core.bean.ActionStatus;
+import com.autoxing.robot_core.action.ActionStatus;
 import com.autoxing.robot_core.bean.ChassisStatus;
-import com.autoxing.robot_core.bean.MoveAction;
+import com.autoxing.robot_core.action.MoveAction;
 import com.autoxing.robot_core.geometry.Line;
 import com.autoxing.robot_core.bean.Location;
 import com.autoxing.robot_core.bean.Map;
@@ -20,7 +17,9 @@ import com.autoxing.robot_core.bean.Pose;
 import com.autoxing.robot_core.bean.PoseTopic;
 import com.autoxing.robot_core.bean.Rotation;
 import com.autoxing.robot_core.bean.TopicBase;
+import com.autoxing.robot_core.util.CommonCallback;
 import com.autoxing.robot_core.util.NetUtil;
+import com.autoxing.robot_core.util.ThreadPoolUtil;
 
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.enums.ReadyState;
@@ -40,8 +39,7 @@ public class AXRobotPlatform {
         private static final AXRobotPlatform INSTANCE = new AXRobotPlatform();
     }
 
-    private AXRobotPlatform() {
-    }
+    private AXRobotPlatform() { }
 
     public static AXRobotPlatform getInstance() {
         return InstanceHolder.INSTANCE;
@@ -51,7 +49,7 @@ public class AXRobotPlatform {
     private final int MESSAGE_CLOSE = 1;
     private final int MESSAGE_ERROR = 2;
 
-    private WebSocketClient mWebSocketClient;
+    private WebSocketClient mWebSocketClient = null;
     private List<IMappingListener> mListeners = new ArrayList<>();
 
     private List<TopicBase> mOccupancyGrids = new ArrayList<>();
@@ -59,18 +57,33 @@ public class AXRobotPlatform {
     private Pose mPose = null;
 
     public void connect(String ip, int port) {
-        String urlBase = String.format("http://%s:%d", ip, port);
-        NetUtil.setUrlBase(urlBase);
+        if (ip != null && port != -1) {
+            String urlBase = String.format("http://%s:%d", ip, port);
+            NetUtil.setUrlBase(urlBase);
+        }
+
+        if (mWebSocketClient != null) {
+            mWebSocketClient.close(10000);
+        }
+        startWebSocket();
     }
 
     public void addLisener(IMappingListener listener) {
         mListeners.add(listener);
     }
+    public void removeLisener(IMappingListener listener) { mListeners.remove(listener); }
+
+    // for internal
+    public void enableBlockThread(boolean enabled) {
+        NetUtil.enableBlockingThread(enabled);
+    }
 
     private void notifyDataChanged() {
         for (int i = 0; i < mListeners.size(); ++i) {
             IMappingListener listener = mListeners.get(i);
-            mListeners.get(i).onDataChanged(mOccupancyGrids);
+            for (int j = 0; j < mOccupancyGrids.size(); ++j) {
+                mListeners.get(i).onDataChanged(mOccupancyGrids.get(j));
+            }
         }
     }
 
@@ -86,37 +99,30 @@ public class AXRobotPlatform {
         }
     }
 
-    private Handler mHandler = new Handler(new Handler.Callback() {
-        @Override
-        public boolean handleMessage(Message msg) {
-
-            switch (msg.what) {
-                case MESSAGE_DATA:
-                    String data = msg.obj.toString();
-                    parseTopicData(data);
-                    break;
-                case MESSAGE_CLOSE:
-                case MESSAGE_ERROR:
-                    webscoketAutoConnect();
-                    break;
-                default:break;
-            }
-
-            return true;
-        }
-    });
-
-    private void webscoketAutoConnect() {
+    private void websocketAutoConnect() {
         if (mWebSocketClient != null && !mWebSocketClient.isOpen()) {
             ReadyState readyState = mWebSocketClient.getReadyState();
             if (readyState.equals(ReadyState.NOT_YET_CONNECTED)) {
+                System.out.println("===robot-core=============== web socket not yet connected");
                 try {
                     mWebSocketClient.connect();
                 } catch (IllegalStateException e) {
+                    e.printStackTrace();
+                    System.out.println("===robot-core=============== web socket auto connecte error");
                 }
             } else if (readyState.equals(ReadyState.CLOSED) || readyState.equals(ReadyState.CLOSING)) {
-                mWebSocketClient.reconnect();
+                System.out.println("===robot-core=============== web socket is closing or closed");
+                ThreadPoolUtil.runAsync(new CommonCallback() {
+                    @Override
+                    public void run() {
+                        mWebSocketClient.reconnect();
+                    }
+                });
+            } else {
+                System.out.println("===robot-core=============== web socket status unknown");
             }
+        } else {
+            System.out.println("===robot-core=============== web socket is null or not open");
         }
     }
 
@@ -152,7 +158,7 @@ public class AXRobotPlatform {
 
                     pose.setYaw(topicJson.getFloat("ori"));
 
-                    setPose(pose);
+                    mPose = pose;
                     topic.setPose(pose);
                     mOccupancyGrids.add(topic);
                 }
@@ -161,36 +167,40 @@ public class AXRobotPlatform {
         notifyDataChanged();
     }
 
-    public void startWebSocket() {
-        URI serverURI = URI.create(NetUtil.url_ws_topics);
+    private void startWebSocket() {
+        URI serverURI = URI.create(NetUtil.getUrl(NetUtil.SERVICE_WS_TOPICS));
         mWebSocketClient = new WebSocketClient(serverURI) {
             @Override
             public void onOpen(ServerHandshake handshakedata) {
                 String status = handshakedata.getHttpStatusMessage();
+                System.out.println("===robot-core=============== web socket connect success, status is " + status);
                 notifyConnected(status);
             }
 
             @Override
             public void onMessage(String message) {
-                Message handlerMessage = Message.obtain();
+                /*Message handlerMessage = Message.obtain();
                 handlerMessage.what = MESSAGE_DATA;
                 handlerMessage.obj = message;
-                mHandler.sendMessage(handlerMessage);
+                mHandler.sendMessage(handlerMessage);*/
+
+                parseTopicData(message);
             }
 
             @Override
             public void onClose(int code, String reason, boolean remote) {
-                Message handlerMessage = Message.obtain();
-                handlerMessage.what = MESSAGE_CLOSE;
-                mHandler.sendMessageDelayed(handlerMessage, 3000);
+                if (code == 10000)
+                    return;
+
+                System.out.println("===robot-core=============== web socket connect closed");
+                websocketAutoConnect();
             }
 
             @Override
             public void onError(Exception e) {
                 notifyError(e);
-                Message handlerMessage = Message.obtain();
-                handlerMessage.what = MESSAGE_ERROR;
-                mHandler.sendMessageDelayed(handlerMessage, 3000);
+                System.out.println("===robot-core=============== web socket connect error");
+                websocketAutoConnect();
             }
         };
         mWebSocketClient.connect();
@@ -198,7 +208,7 @@ public class AXRobotPlatform {
     }
 
     public String getDeviceId() {
-        return "0";
+        return "81811061000021b";
     }
 
     public int getBatteryPercentage() {
@@ -216,7 +226,7 @@ public class AXRobotPlatform {
     public boolean setChassisStatus(ChassisStatus status) {
         HashMap hashmap = new HashMap();
         hashmap.put("control_mode", status.toString().toLowerCase());
-        Response res = NetUtil.syncReq2(NetUtil.url_chassis_status, hashmap, NetUtil.HTTP_METHOD.patch);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_STATUS), hashmap, NetUtil.HTTP_METHOD.patch);
         if (res == null)
             return false;
 
@@ -224,38 +234,56 @@ public class AXRobotPlatform {
     }
 
     public Mapping startMapping() {
-        String res = NetUtil.syncReq(NetUtil.url_mappings + "/?format=json", NetUtil.HTTP_METHOD.post);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_MAPPINGS) + "/?format=json", NetUtil.HTTP_METHOD.post);
+
+        if (res == null)
+            return null;
+
+        if (res.code() / 100 != 2)
+            return null;
 
         JSONObject jsonObject = null;
         try {
-            jsonObject = JSON.parseObject(res);
-        } catch (RuntimeException e) {
+            jsonObject = JSON.parseObject(res.body().string());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassCastException e) {
             e.printStackTrace();
         }
 
         if (jsonObject == null)
             return null;
 
-        Mapping mapping = new Mapping();
-        mapping.setId(jsonObject.getInteger("id"));
-        mapping.setStartTime(jsonObject.getLong("start_time"));
-        mapping.setState(jsonObject.getString("state"));
-        mapping.setUrl(jsonObject.getString("url"));
+        Mapping mapping = new Mapping(jsonObject);
         return mapping;
     }
 
-    public boolean stopCurrentMapping() {
-        HashMap hashMap = new HashMap();
-        hashMap.put("state", "finished");
-        Response res = NetUtil.syncReq2(NetUtil.url_mappings + "/current" + "?format=json", hashMap, NetUtil.HTTP_METHOD.patch);
+    public Mapping getCurrentMapping() {
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_MAPPINGS) + "/current" + "?format=json", NetUtil.HTTP_METHOD.get);
         if (res == null)
-            return false;
+            return null;
 
-        return res.code() == 200;
+        if (res.code() / 100 != 2)
+            return null;
+
+        JSONObject jsonObject = null;
+        try {
+            jsonObject = JSON.parseObject(res.body().string());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassCastException e) {
+            e.printStackTrace();
+        }
+
+        if (jsonObject == null)
+            return null;
+
+        Mapping mapping = new Mapping(jsonObject);
+        return mapping;
     }
 
-    public List<Mapping> getMappingTasks() {
-        String res = NetUtil.syncReq(NetUtil.url_mappings);
+    public List<Mapping> getMappings() {
+        String res = NetUtil.syncReq(NetUtil.getUrl(NetUtil.SERVICE_MAPPINGS));
         JSONArray jsonArr = JSON.parseArray(res);
         List<Mapping> mappings = new ArrayList<>();
         if (jsonArr != null) {
@@ -276,7 +304,7 @@ public class AXRobotPlatform {
     }
 
     public List<Map> getMaps() {
-        String res = NetUtil.syncReq(NetUtil.url_maps);
+        String res = NetUtil.syncReq(NetUtil.getUrl(NetUtil.SERVICE_MAPS));
         JSONArray jsonArr = JSON.parseArray(res);
         List<Map> maps = new ArrayList<>();
         if (jsonArr != null) {
@@ -293,6 +321,25 @@ public class AXRobotPlatform {
         return maps;
     }
 
+    public boolean addMap(String mapData) {
+        Response res = NetUtil.syncReq3(NetUtil.getUrl(NetUtil.SERVICE_MAPS) + "?format=json", mapData, NetUtil.HTTP_METHOD.post);
+        if (res == null)
+            return false;
+
+        return res.code() == 200;
+    }
+
+    public boolean updateMap(String mapData, boolean partial) {
+        JSONObject json = JSON.parseObject(mapData);
+        int mapId = json.getInteger("id");
+        NetUtil.HTTP_METHOD method = partial ? NetUtil.HTTP_METHOD.patch : NetUtil.HTTP_METHOD.put;
+        Response res = NetUtil.syncReq3(NetUtil.getUrl(NetUtil.SERVICE_MAPS) + "/" + mapId + "?format=json", mapData, method);
+        if (res == null)
+            return false;
+
+        return res.code() == 200;
+    }
+
     public boolean setCurrentMap(Map map, Pose pose) {
         Response res = null;
 
@@ -300,19 +347,25 @@ public class AXRobotPlatform {
         if (data == null) {
             HashMap<String, Integer> hashmap = new HashMap();
             hashmap.put("map_id", map.getId());
-            res = NetUtil.syncReq2(NetUtil.url_chassis_current_map, hashmap, NetUtil.HTTP_METHOD.post);
+            res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_CURRENT_MAP), hashmap, NetUtil.HTTP_METHOD.post);
         } else {
-            res = NetUtil.syncReq3(NetUtil.url_chassis_current_map, data, NetUtil.HTTP_METHOD.post);
+            res = NetUtil.syncReq3(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_CURRENT_MAP), data, NetUtil.HTTP_METHOD.post);
         }
 
         if (res == null)
             return false;
 
-        return  res.code() == 200;
+        if (res.code() != 200)
+            return false;
+
+        if (pose == null)
+            return true;
+
+        return setPose(pose);
     }
 
     public int getCurrentMapId() {
-        String res = NetUtil.syncReq(NetUtil.url_chassis_current_map, NetUtil.HTTP_METHOD.get);
+        String res = NetUtil.syncReq(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_CURRENT_MAP), NetUtil.HTTP_METHOD.get);
         JSONObject jsonObject = null;
         try {
             jsonObject = JSON.parseObject(res);
@@ -330,19 +383,31 @@ public class AXRobotPlatform {
     }
 
     public boolean removeCurrentMap() {
-        Response res = NetUtil.syncReq2(NetUtil.url_chassis_current_map, NetUtil.HTTP_METHOD.delete);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_CURRENT_MAP), NetUtil.HTTP_METHOD.delete);
         if (res == null)
             return false;
 
         return res.code() == 200;
     }
 
-    public void setPose(Pose pose) {
-        mPose = pose;
-    }
-
     public Pose getPose() {
         return mPose;
+    }
+
+    public boolean setPose(Pose pose) {
+        List list = new ArrayList();
+        list.add(pose.getX());
+        list.add(pose.getY());
+        list.add(pose.getZ());
+        HashMap hashMap = new HashMap();
+        hashMap.put("position", list);
+        hashMap.put("ori", pose.getYaw());
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_POSE), hashMap, NetUtil.HTTP_METHOD.post);
+
+        if (res == null)
+            return false;
+
+        return  res.code() == 200;
     }
 
     public void addLines(List<Line> lines) {
@@ -360,7 +425,7 @@ public class AXRobotPlatform {
         hashMap.put("target_z",location.getZ());
         if (option.isWithYaw())
             hashMap.put("target_ori", yaw);
-        Response res = NetUtil.syncReq2(NetUtil.url_chassis_moves, hashMap, NetUtil.HTTP_METHOD.post);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES), hashMap, NetUtil.HTTP_METHOD.post);
         if (res == null)
             return null;
 
@@ -386,10 +451,10 @@ public class AXRobotPlatform {
         return action;
     }
 
-    public MoveAction rotateTo(Rotation rotation) {
+    public MoveAction rotateWithAbsoluteOrientation(Rotation rotation) {
         HashMap hashMap = new HashMap();
         hashMap.put("target_ori", rotation.getYaw());
-        Response res = NetUtil.syncReq2(NetUtil.url_chassis_moves, hashMap, NetUtil.HTTP_METHOD.post);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES), hashMap, NetUtil.HTTP_METHOD.post);
         if (res == null)
             return null;
 
@@ -412,11 +477,16 @@ public class AXRobotPlatform {
         action.setId(jsonObject.getInteger("id"));
         String stateStr = jsonObject.getString("state");
         action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
+        return action;
+    }
+
+    public MoveAction rotateWithRelativeOrientation(Rotation rotation) {
+        MoveAction action = new MoveAction();
         return action;
     }
 
     public List<MoveAction> getMoveActions() {
-        String res = NetUtil.syncReq(NetUtil.url_chassis_moves);
+        String res = NetUtil.syncReq(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES));
         JSONArray jsonArr = JSON.parseArray(res);
         List<MoveAction> moveActions = new ArrayList<>();
         if (jsonArr != null) {
@@ -446,7 +516,7 @@ public class AXRobotPlatform {
     public boolean moveWithAction(MoveDirection direction) {
         HashMap hashmap = new HashMap();
         hashmap.put("action", direction.toString().toLowerCase());
-        Response res = NetUtil.syncReq2(NetUtil.url_chassis_remote_action, hashmap, NetUtil.HTTP_METHOD.post);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_REMOTE_ACTION), hashmap, NetUtil.HTTP_METHOD.post);
         if (res == null)
             return false;
 
@@ -458,15 +528,24 @@ public class AXRobotPlatform {
         return action;
     }
 
-    // not complete, don't use it
-    public boolean remoteTwist(float yaw) {
+    public boolean moveWithTwist(float velocityY, float angularVelocityZ) {
         HashMap hashmap = new HashMap();
 
-        /*hashmap.put("velocity", );
-        hashmap.put("angular_velocity", );
-        hashmap.put("time", );*/
+        List velocity = new ArrayList();
+        velocity.add(.0f);
+        velocity.add(velocityY);
+        velocity.add(.0f);
 
-        Response res = NetUtil.syncReq2(NetUtil.url_chassis_remote_twist, hashmap, NetUtil.HTTP_METHOD.post);
+        List angularVelocity = new ArrayList();
+        angularVelocity.add(.0f);
+        angularVelocity.add(.0f);
+        angularVelocity.add(angularVelocityZ);
+
+        hashmap.put("velocity", velocity);
+        hashmap.put("angular_velocity", angularVelocity);
+        hashmap.put("time", 0.1f);
+
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_REMOTE_TWIST), hashmap, NetUtil.HTTP_METHOD.post);
         if (res == null)
             return false;
 

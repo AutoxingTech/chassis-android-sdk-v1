@@ -35,11 +35,4 @@ public class OccupancyGridTopic extends TopicBase {
         }
         return mBitmap;
     }
-
-    public Point worldToScreen(Location location) {
-        Point pt = new Point();
-        pt.x = (int)((location.getX() - mOriginX) / mResolution);
-        pt.y = (int)((location.getY() - mOriginY) / mResolution);
-        return pt;
-    }
 }

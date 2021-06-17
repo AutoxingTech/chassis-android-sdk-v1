@@ -6,6 +6,6 @@ import java.util.List;
 
 public interface IMappingListener {
     void onConnected(String status);
-    void onDataChanged(List<TopicBase> topics);
+    void onDataChanged(TopicBase topic);
     void onError(Exception e);
 }

@@ -14,7 +14,7 @@ public class Pose {
         this.mRotation = rotation;
     }
 
-    public Pose(float x, float y, float z, float yaw, float roll, float pitch)
+    public Pose(float x, float y, float z, float yaw, float pitch, float roll)
     {
         this.mLocation = new Location(x, y, z);
         this.mRotation = new Rotation(yaw, pitch, roll);
@@ -72,10 +72,7 @@ public class Pose {
         this.mLocation.setZ(v);
     }
 
-    public float getYaw()
-    {
-        return this.mRotation.getYaw();
-    }
+    public float getYaw() { return this.mRotation.getYaw(); }
 
     public void setYaw(float v)
     {

@@ -1,4 +1,4 @@
-package com.autoxing.robot_core.bean;
+package com.autoxing.robot_core.action;
 
 public enum ActionStatus {
     MOVING,

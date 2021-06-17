@@ -22,22 +22,24 @@ import com.autoxing.robot_core.IMappingListener;
 import com.autoxing.robot_core.bean.ChassisStatus;
 import com.autoxing.robot_core.bean.Location;
 import com.autoxing.robot_core.bean.Map;
-import com.autoxing.robot_core.bean.MoveAction;
+import com.autoxing.robot_core.action.MoveAction;
 import com.autoxing.robot_core.bean.MoveOption;
 import com.autoxing.robot_core.bean.PoseTopic;
 import com.autoxing.robot_core.bean.TopicBase;
+import com.autoxing.robot_core.geometry.PointF;
+import com.autoxing.robot_core.util.CoordinateUtil;
 import com.autoxing.util.DensityUtil;
 import com.autoxing.util.GlobalUtil;
 import com.autoxing.util.RobotUtil;
-import com.autoxing.x.util.CommonCallBack;
-import com.autoxing.x.util.ThreadPoolUtil;
+import com.autoxing.robot_core.util.CommonCallback;
+import com.autoxing.robot_core.util.ThreadPoolUtil;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.transition.Transition;
 
 import org.buraktamturk.loadingview.LoadingView;
 
-import java.util.List;
+import java.text.DecimalFormat;
 
 public class MapAutoFragment extends Fragment implements View.OnClickListener, IMappingListener {
 
@@ -51,10 +53,16 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
     private ImageView mCurrentPos;
     private ImageView mAnchor = null;
     private Button mBtnMove;
+    private Button mBtnCancel;
 
     private Location mLocation = null;
     private Point mScreenSize = null;
     private Bitmap mBitmap = null;
+
+    private MoveAction mMoveAction = null;
+    private CoordinateUtil mCoordinateUtil = null;
+
+    private DecimalFormat mDf = new DecimalFormat("##0.00");
 
     public MapAutoFragment(Map map) {
         super();
@@ -89,6 +97,7 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
         mCoordinateValue = (TextView) view.findViewById(R.id.tv_screen_value);
         mCurrentPos = (ImageView) view.findViewById(R.id.iv_current_pos);
         mBtnMove = (Button) view.findViewById(R.id.btn_move);
+        mBtnCancel = (Button) view.findViewById(R.id.btn_cancel);
     }
 
     private void initData() {
@@ -117,15 +126,16 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
 
     private void setListener() {
         mBtnMove.setOnClickListener(this);
+        mBtnCancel.setOnClickListener(this);
         mIvMap.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 if(event.getAction() == MotionEvent.ACTION_DOWN) {
-                    int x = (int)event.getX();
-                    int y = (int)event.getY();
+                    float x = event.getX();
+                    float y = event.getY();
 
-                    int viewX = (int)mIvMap.getX();
-                    int viewY = (int)mIvMap.getY();
+                    float viewX = mIvMap.getX();
+                    float viewY = mIvMap.getY();
 
                     int viewWidth = mIvMap.getWidth();
                     int viewHeight = mIvMap.getHeight();
@@ -135,24 +145,24 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                     float scaleX = (float)bitmapWidth / viewWidth;
                     float scaleY = (float)bitmapHeight / viewHeight;
 
-                    int imageX = x - viewX;
-                    int imageY = y - viewY;
+                    float imageX = x - viewX;
+                    float imageY = y - viewY;
 
-                    int moveX = (int)(imageX * scaleX);
-                    int moveY = (int)(imageY * scaleY);
+                    float moveX = imageX * scaleX;
+                    float moveY = imageY * scaleY;
                     StringBuilder sb = new StringBuilder();
-                    sb.append("x = " + moveX);
-                    sb.append(", y = " + moveY);
+                    sb.append("x = " + mDf.format(moveX));
+                    sb.append(", y = " + mDf.format(moveY));
                     sb.append("\n");
 
-                    mLocation = mMap.screenToWorld(moveX,bitmapHeight - moveY);
-                    sb.append("x = " + mLocation.getX());
-                    sb.append(", y = " + mLocation.getY());
-                    sb.append(", z = " + mLocation.getZ());
+                    mLocation = mCoordinateUtil.screenToWorld(moveX,bitmapHeight - moveY);
+                    sb.append("x = " + mDf.format(mLocation.getX()));
+                    sb.append(", y = " + mDf.format(mLocation.getY()));
+                    sb.append(", z = " + mDf.format(mLocation.getZ()));
 
                     mCoordinateValue.setText(sb.toString());
 
-                    int curPospRadiusPx = DensityUtil.dip2px(getContext(),5.f);
+                    float curPospRadiusPx = DensityUtil.dip2px(getContext(),5.f);
                     imageX -= curPospRadiusPx;
                     imageY -= curPospRadiusPx;
 
@@ -164,11 +174,11 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                         mAnchor.setImageDrawable(getResources().getDrawable((R.drawable.anchor)));
                         mContainer.addView(mAnchor);
 
-                        int anchorDiameterPx = DensityUtil.dip2px(getContext(),10.f);
+                        float anchorDiameterPx = DensityUtil.dip2px(getContext(),10.f);
 
                         FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) mAnchor.getLayoutParams();
-                        params.width = anchorDiameterPx;
-                        params.height = anchorDiameterPx;
+                        params.width = (int)anchorDiameterPx;
+                        params.height = (int)anchorDiameterPx;
                         mAnchor.setLayoutParams(params);
                         mAnchor.setScaleType(ImageView.ScaleType.FIT_XY);
 
@@ -188,7 +198,7 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
     }
 
     private void loadMapDetail() {
-        ThreadPoolUtil.run(new CommonCallBack() {
+        ThreadPoolUtil.runAsync(new CommonCallback() {
             @Override
             public void run() {
                 boolean succ = mMap.loadDetail();
@@ -198,6 +208,10 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                     public void run() {
                         if (!succ) {
                             Toast.makeText(getContext(), "failed to load map detail", Toast.LENGTH_SHORT).show();
+                        } else {
+                            mCoordinateUtil = new CoordinateUtil();
+                            mCoordinateUtil.setOrigin(mMap.getOriginX(), mMap.getOriginY());
+                            mCoordinateUtil.setResolution(mMap.getResolution());
                         }
                     }
                 });
@@ -219,39 +233,37 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
     }
 
     @Override
-    public void onDataChanged(List<TopicBase> topics) {
+    public void onDataChanged(TopicBase topic) {
         Activity activity = getActivity();
         if (activity == null)
             return;
 
-        for (int i = 0; i < topics.size(); ++i) {
-            TopicBase topic = topics.get(i);
-            if (topic instanceof PoseTopic && mBitmap != null) {
-                PoseTopic poseTopic = (PoseTopic)topic;
-                Point pt = mMap.worldToScreen(poseTopic.getPose().getLocation());
+        if (topic instanceof PoseTopic && mBitmap != null && mCoordinateUtil != null) {
+            System.out.println("---***------------ received ");
+            PoseTopic poseTopic = (PoseTopic)topic;
+            PointF pt = mCoordinateUtil.worldToScreen(poseTopic.getPose().getLocation());
 
-                int viewWidth = mIvMap.getWidth();
-                int viewHeight = mIvMap.getHeight();
+            int viewWidth = mIvMap.getWidth();
+            int viewHeight = mIvMap.getHeight();
 
-                int bitmapWidth = mBitmap.getWidth();
-                int bitmapHeight = mBitmap.getHeight();
-                float scaleX = (float)bitmapWidth / viewWidth;
-                float scaleY = (float)bitmapHeight / viewHeight;
+            int bitmapWidth = mBitmap.getWidth();
+            int bitmapHeight = mBitmap.getHeight();
+            float scaleX = (float)bitmapWidth / viewWidth;
+            float scaleY = (float)bitmapHeight / viewHeight;
 
-                int curPospRadiusPx = DensityUtil.dip2px(activity,5.f);
-                int screenX = (int)(pt.x / scaleX) - curPospRadiusPx;
-                int screenY = (int)(((bitmapHeight - pt.y) / scaleY) - curPospRadiusPx);
+            float curPospRadiusPx = DensityUtil.dip2px(activity,10.f);
+            float screenX = (pt.getX() / scaleX) - curPospRadiusPx;
+            float screenY = ((bitmapHeight - pt.getY()) / scaleY) - curPospRadiusPx;
 
-                activity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mCurrentPos.setX(screenX);
-                        mCurrentPos.setY(screenY);
-                        mCurrentPos.setRotation(poseTopic.getPose().getYaw());
-                        mCurrentPos.setVisibility(View.VISIBLE);
-                    }
-                });
-            }
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mCurrentPos.setX(screenX);
+                    mCurrentPos.setY(screenY);
+                    float degree = -(float) Math.toDegrees(poseTopic.getPose().getYaw());
+                    mCurrentPos.setRotation(degree);
+                }
+            });
         }
     }
 
@@ -267,7 +279,7 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(getContext(), "webscoket connected error", 1200).show();
+                Toast.makeText(activity, "webscoket connected error", 1200).show();
             }
         });
     }
@@ -278,8 +290,38 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
             case R.id.btn_move:
                 move();
                 break;
+            case R.id.btn_cancel:
+                cancel();
+                break;
             default:break;
         }
+    }
+
+    private void cancel() {
+        if (mMoveAction == null) {
+            Toast.makeText(getContext(),"no move action!", Toast.LENGTH_SHORT).show();
+        }
+
+        mLoadingView.setLoading(true);
+        ThreadPoolUtil.runAsync(new CommonCallback() {
+            @Override
+            public void run() {
+                boolean succ = mMoveAction.cancel();
+
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String content = "failed to cancel current action!";
+                        if (succ) {
+                            content = "action status is canceled";
+                            mMoveAction = null;
+                        }
+                        Toast.makeText(getContext(), content, Toast.LENGTH_SHORT).show();
+                        mLoadingView.setLoading(false);
+                    }
+                });
+            }
+        });
     }
 
     private void move() {
@@ -288,19 +330,19 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
         }
 
         mLoadingView.setLoading(true);
-        ThreadPoolUtil.run(new CommonCallBack() {
+        ThreadPoolUtil.runAsync(new CommonCallback() {
             @Override
             public void run() {
-                MoveAction moveAction = AXRobotPlatform.getInstance().moveTo(mLocation, new MoveOption(), .0f);
+                mMoveAction = AXRobotPlatform.getInstance().moveTo(mLocation, new MoveOption(), .0f);
 
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         String content = "failed to move to dest!";
-                        if (moveAction != null) {
+                        if (mMoveAction != null) {
                             StringBuilder sb = new StringBuilder();
                             sb.append("robot status is ");
-                            sb.append(moveAction.getStatus().toString());
+                            sb.append(mMoveAction.getStatus().toString());
                             content = sb.toString();
                         }
                         Toast.makeText(getContext(), content, Toast.LENGTH_SHORT).show();

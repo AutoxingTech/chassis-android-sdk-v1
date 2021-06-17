@@ -32,14 +32,14 @@
         android:textColor="@android:color/black"
         android:text="Title"/>
 
-    <ImageView
-        android:id="@+id/iv_right"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginRight="5dp"
+    <ImageButton
+        android:id="@+id/ibtn_right"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginRight="10dp"
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
-        android:visibility="gone"/>
+        android:src="@mipmap/jy_drltsz_btn_addperson"/>
 
     <TextView
         android:id="@+id/tv_right_title"

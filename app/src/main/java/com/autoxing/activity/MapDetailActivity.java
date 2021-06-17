@@ -21,8 +21,8 @@ import com.autoxing.robot_core.bean.Map;
 import com.autoxing.util.RobotUtil;
 import com.autoxing.view.CustomViewPager;
 import com.autoxing.view.TabEntity;
-import com.autoxing.x.util.CommonCallBack;
-import com.autoxing.x.util.ThreadPoolUtil;
+import com.autoxing.robot_core.util.CommonCallback;
+import com.autoxing.robot_core.util.ThreadPoolUtil;
 import com.flyco.tablayout.CommonTabLayout;
 import com.flyco.tablayout.listener.CustomTabEntity;
 import com.flyco.tablayout.listener.OnTabSelectListener;
@@ -131,7 +131,7 @@ public class MapDetailActivity extends BaseActivity {
     }
 
     private void removeCurrentMap() {
-        ThreadPoolUtil.run(new CommonCallBack() {
+        ThreadPoolUtil.runAsync(new CommonCallback() {
             @Override
             public void run() {
                 boolean succ = AXRobotPlatform.getInstance().removeCurrentMap();

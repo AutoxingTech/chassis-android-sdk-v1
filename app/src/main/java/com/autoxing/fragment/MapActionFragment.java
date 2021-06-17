@@ -13,8 +13,8 @@ import androidx.fragment.app.Fragment;
 import com.autoxing.controller.R;
 import com.autoxing.robot_core.AXRobotPlatform;
 import com.autoxing.robot_core.bean.MoveDirection;
-import com.autoxing.x.util.CommonCallBack;
-import com.autoxing.x.util.ThreadPoolUtil;
+import com.autoxing.robot_core.util.CommonCallback;
+import com.autoxing.robot_core.util.ThreadPoolUtil;
 
 public class MapActionFragment extends Fragment implements View.OnTouchListener {
 
@@ -23,6 +23,8 @@ public class MapActionFragment extends Fragment implements View.OnTouchListener 
     private ImageButton mRight;
     private ImageButton mLeft;
     private ImageButton mDown;
+
+    private boolean mCanContinue = false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -56,7 +58,8 @@ public class MapActionFragment extends Fragment implements View.OnTouchListener 
     }
 
     private void moveWithAction(MoveDirection direction) {
-        ThreadPoolUtil.run(new CommonCallBack() {
+        mCanContinue = false;
+        ThreadPoolUtil.runAsync(new CommonCallback() {
             @Override
             public void run() {
                 boolean succ = AXRobotPlatform.getInstance().moveWithAction(direction);
@@ -69,6 +72,8 @@ public class MapActionFragment extends Fragment implements View.OnTouchListener 
                             sb.append("failed to ");
                             sb.append(direction.toString().toLowerCase().replace("_", " "));
                             Toast.makeText(getActivity(), sb.toString(),1200).show();
+                        } else {
+                            mCanContinue = true;
                         }
                     }
                 });
@@ -78,7 +83,7 @@ public class MapActionFragment extends Fragment implements View.OnTouchListener 
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        if (event.getAction() == MotionEvent.ACTION_MOVE) {
+        if (event.getAction() == MotionEvent.ACTION_MOVE && mCanContinue) {
             switch (v.getId()) {
                 case R.id.ibtn_up:
                     moveWithAction(MoveDirection.GO_FORWARD);
@@ -94,6 +99,8 @@ public class MapActionFragment extends Fragment implements View.OnTouchListener 
                     break;
                 default:break;
             }
+        } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            mCanContinue = true;
         }
         return false;
     }

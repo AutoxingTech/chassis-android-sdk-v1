@@ -16,19 +16,24 @@ public class NetUtil {
         get,
         post,
         delete,
+        put,
         patch
     }
 
+    private static boolean blockingThread = true;
+
     private static String baseUrl = "http://tun.autoxing.com:6612";
 
-    public static final String url_maps = baseUrl + "/maps";
-    public static final String url_mappings = baseUrl + "/mappings";
-    public static final String url_chassis_moves = baseUrl + "/chassis/moves";
-    public static final String url_chassis_status = baseUrl + "/chassis/status";
-    public static final String url_chassis_current_map = baseUrl + "/chassis/current-map";
-    public static final String url_chassis_remote_action = baseUrl + "/chassis/remote/action";
-    public static final String url_chassis_remote_twist = baseUrl + "/chassis/remote/twist";
-    public static final String url_ws_topics = baseUrl + "/ws/topics";
+    public static final String SERVICE_MAPS = "/maps";
+    public static final String SERVICE_MAPPINGS = "/mappings";
+    public static final String SERVICE_CHASSIS_MOVES = "/chassis/moves";
+    public static final String SERVICE_CHASSIS_STATUS = "/chassis/status";
+    public static final String SERVICE_CHASSIS_POSE = "/chassis/pose";
+    public static final String SERVICE_CHASSIS_CURRENT_MAP = "/chassis/current-map";
+    public static final String SERVICE_CHASSIS_REMOTE_ACTION = "/chassis/remote/action";
+    public static final String SERVICE_CHASSIS_REMOTE_TWIST = "/chassis/remote/twist";
+    public static final String SERVICE_WS_TOPICS = "/ws/topics";
+
 
     private static OkHttpClient okHttpClient = new OkHttpClient.Builder()
             .connectTimeout(20, TimeUnit.SECONDS) //连接超时
@@ -38,6 +43,12 @@ public class NetUtil {
     public static void setUrlBase(String url){
         NetUtil.baseUrl = url;
     }
+
+    public static String getUrl(String serviceName) {
+        return NetUtil.baseUrl + serviceName;
+    }
+
+    public static void enableBlockingThread(boolean enabled) { blockingThread = enabled; }
 
     public static String syncReq(String url) {
         return NetUtil.syncReq(url, HTTP_METHOD.get);
@@ -92,17 +103,43 @@ public class NetUtil {
     }
 
     public static String syncReq(String url, Map reqObj, HTTP_METHOD httpMethod) {
-        String res = null;
-        Response response = syncReq2(url, reqObj, httpMethod);
-        if (response != null)
-        {
-            try {
-                res = response.body().string();
-            } catch (IOException e) {
-                e.printStackTrace();
+        final String[] res = {null};
+
+        if (blockingThread) {
+            ThreadPoolUtil.runSync(new CommonCallback() {
+                @Override
+                public void run() {
+                    String content = null;
+                    if (reqObj != null) {
+                        content = JSON.toJSONString(reqObj);
+                    }
+
+                    Response response = syncReq3Imple(url, content, httpMethod);
+                    if (response != null)
+                    {
+                        try {
+                            res[0] = response.body().string();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            System.out.println("===robot-core=============== parse response body failed, url is " + url + ", post method = " + httpMethod.toString());
+                        }
+                    }
+                }
+            });
+        } else {
+            Response response = syncReq2(url, reqObj, httpMethod);
+            if (response != null)
+            {
+                try {
+                    res[0] = response.body().string();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    System.out.println("===robot-core=============== parse response body failed, url is " + url + ", post method = " + httpMethod.toString());
+                }
             }
         }
-        return res;
+
+        return res[0];
     }
 
     public static Response syncReq2(String url) {
@@ -124,6 +161,23 @@ public class NetUtil {
     }
 
     public static Response syncReq3(String url, String content, HTTP_METHOD httpMethod) {
+        final Response[] response = {null};
+
+        if (blockingThread) {
+            ThreadPoolUtil.runSync(new CommonCallback() {
+                @Override
+                public void run() {
+                    response[0] = syncReq3Imple(url, content, httpMethod);
+                }
+            });
+        } else {
+            response[0] = syncReq3Imple(url, content, httpMethod);
+        }
+
+        return response[0];
+    }
+
+    private static Response syncReq3Imple(String url, String content, HTTP_METHOD httpMethod) {
         Request request = null;
         if (content == null) {
             if (httpMethod == HTTP_METHOD.post) {
@@ -148,6 +202,8 @@ public class NetUtil {
                 request = new Request.Builder().url(url).post(body).build();
             } else if (httpMethod == HTTP_METHOD.patch) {
                 request = new Request.Builder().url(url).patch(body).build();
+            } else if (httpMethod == HTTP_METHOD.put) {
+                request = new Request.Builder().url(url).put(body).build();
             } else {
                 request = new Request.Builder().url(url).build();
             }
@@ -158,7 +214,9 @@ public class NetUtil {
             response = okHttpClient.newCall(request).execute();
         } catch (IOException e) {
             e.printStackTrace();
+            System.out.println("===robot-core=============== request execute failed, url is " + url + ", post method = " + httpMethod.toString());
         }
+
         return response;
     }
 

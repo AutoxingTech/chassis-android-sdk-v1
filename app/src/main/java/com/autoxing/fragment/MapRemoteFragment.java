@@ -1,6 +1,5 @@
 package com.autoxing.fragment;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,14 +17,13 @@ import com.autoxing.util.RobotUtil;
 import com.autoxing.view.CustomViewPager;
 import com.flyco.tablayout.SegmentTabLayout;
 import com.flyco.tablayout.listener.OnTabSelectListener;
-import com.flyco.tablayout.widget.MsgView;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MapRemoteFragment extends Fragment {
 
-    private String mTitles[] = { "Twist", "Action" };
+    private String mTitles[] = { "Action", "Twist" };
     private List<Fragment> mTabFragmentList = new ArrayList<>();
 
     private View mLayout = null;
@@ -56,8 +54,8 @@ public class MapRemoteFragment extends Fragment {
         mViewPager.setPagingEnabled(false);
         mViewPager.setCurrentItem(1);
 
-        mTabFragmentList.add(new MapTwistFragment());
         mTabFragmentList.add(new MapActionFragment());
+        mTabFragmentList.add(new MapTwistFragment());
         mViewPager.setAdapter(new FragmentPagerAdapter(getChildFragmentManager(),
                 FragmentPagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
             @NonNull

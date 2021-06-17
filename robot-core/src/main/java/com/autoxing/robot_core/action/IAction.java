@@ -1,4 +1,4 @@
-package com.autoxing.robot_core.bean;
+package com.autoxing.robot_core.action;
 
 public class IAction {
     protected int id;
@@ -17,4 +17,6 @@ public class IAction {
     public boolean cancel() {
         return false;
     }
+
+    public Path getRemainingPath() { return null; }
 }

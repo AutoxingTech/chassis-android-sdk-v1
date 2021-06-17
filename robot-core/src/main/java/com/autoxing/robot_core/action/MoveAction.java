@@ -1,4 +1,4 @@
-package com.autoxing.robot_core.bean;
+package com.autoxing.robot_core.action;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -11,38 +11,33 @@ import okhttp3.Response;
 
 public class MoveAction extends IAction {
 
+    @Override
     public ActionStatus waitUntilDone() {
-        int count = 0;
         ActionStatus status = ActionStatus.ERROR;
         for (;;) {
             status = getCurrentStatus();
             if (status != ActionStatus.MOVING) {
                 return status;
             }
-
-            count++;
-            if (count % 1000 == 0) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
         }
     }
 
+    @Override
     public boolean cancel() {
         HashMap hashMap = new HashMap();
         hashMap.put("state", "cancelled");
-        Response res = NetUtil.syncReq2(NetUtil.url_chassis_moves + "/" + this.id +  "?format=json", hashMap, NetUtil.HTTP_METHOD.patch);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES) + "/" + this.id +  "?format=json", hashMap, NetUtil.HTTP_METHOD.patch);
         if (res == null)
             return false;
 
         return res.code() == 200;
     }
 
+    @Override
+    public Path getRemainingPath() { return new Path(); }
+
     private ActionStatus getCurrentStatus() {
-        Response res = NetUtil.syncReq2(NetUtil.url_chassis_moves + "/" + this.id +  "?format=json", NetUtil.HTTP_METHOD.get);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES) + "/" + this.id +  "?format=json", NetUtil.HTTP_METHOD.get);
         if (res == null)
             return ActionStatus.ERROR;
 

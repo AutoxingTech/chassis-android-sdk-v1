@@ -20,6 +20,8 @@ import com.autoxing.robot_core.bean.ChassisStatus;
 import com.autoxing.robot_core.bean.Map;
 import com.autoxing.robot_core.bean.PoseTopic;
 import com.autoxing.robot_core.bean.TopicBase;
+import com.autoxing.robot_core.geometry.PointF;
+import com.autoxing.robot_core.util.CoordinateUtil;
 import com.autoxing.util.DensityUtil;
 import com.autoxing.util.GlobalUtil;
 import com.autoxing.util.RobotUtil;
@@ -39,6 +41,7 @@ public class MapManualFragment extends Fragment implements IMappingListener {
 
     private Point mScreenSize = null;
     private Bitmap mBitmap = null;
+    private CoordinateUtil mCoordinateUtil = null;
 
     public MapManualFragment(Map map) {
         super();
@@ -51,6 +54,11 @@ public class MapManualFragment extends Fragment implements IMappingListener {
         if (mLayout == null) {
             mLayout = inflater.inflate(R.layout.map_manual_layout, container,false);
             mScreenSize = GlobalUtil.getScreenSize(getContext());
+            if (mMap.isDetailLoaded()) {
+                mCoordinateUtil = new CoordinateUtil();
+                mCoordinateUtil.setOrigin(mMap.getOriginX(), mMap.getOriginY());
+                mCoordinateUtil.setResolution(mMap.getResolution());
+            }
             AXRobotPlatform.getInstance().addLisener(this);
             initView(mLayout);
             initData();
@@ -110,36 +118,36 @@ public class MapManualFragment extends Fragment implements IMappingListener {
     }
 
     @Override
-    public void onDataChanged(List<TopicBase> topics) {
-        for (int i = 0; i < topics.size(); ++i) {
-            TopicBase topic = topics.get(i);
-            if (topic instanceof PoseTopic && mMap != null) {
-                PoseTopic poseTopic = (PoseTopic)topic;
-                Point pt = mMap.worldToScreen(poseTopic.getPose().getLocation());
+    public void onDataChanged(TopicBase topic) {
+        Activity activity = getActivity();
+        if (activity == null)
+            return;
 
-                int viewWidth = mMappingImage.getWidth();
-                int viewHeight = mMappingImage.getHeight();
+        if (topic instanceof PoseTopic && mMap != null && mCoordinateUtil != null) {
+            PoseTopic poseTopic = (PoseTopic)topic;
+            PointF pt = mCoordinateUtil.worldToScreen(poseTopic.getPose().getLocation());
 
-                int bitmapWidth = mBitmap.getWidth();
-                int bitmapHeight = mBitmap.getHeight();
-                float scaleX = (float)bitmapWidth / viewWidth;
-                float scaleY = (float)bitmapHeight / viewHeight;
+            int viewWidth = mMappingImage.getWidth();
+            int viewHeight = mMappingImage.getHeight();
 
-                int curPosRadiusPx = DensityUtil.dip2px(getContext(),10.f);
-                int screenX = (int)(pt.x / scaleX) + (int)mMappingImage.getX() - curPosRadiusPx;
-                int screenY = (int)(((bitmapHeight - pt.y) / scaleY) + (int)mMappingImage.getY() - curPosRadiusPx);
+            int bitmapWidth = mBitmap.getWidth();
+            int bitmapHeight = mBitmap.getHeight();
+            float scaleX = (float)bitmapWidth / viewWidth;
+            float scaleY = (float)bitmapHeight / viewHeight;
 
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mCurrentPos.setX(screenX);
-                        mCurrentPos.setY(screenY);
-                        float degree = (float) Math.toDegrees(poseTopic.getPose().getYaw());
-                        mCurrentPos.setRotation(degree);
-                        mCurrentPos.setVisibility(View.VISIBLE);
-                    }
-                });
-            }
+            float curPosRadiusPx = DensityUtil.dip2px(activity,10.f);
+            float screenX = (pt.getX() / scaleX) + mMappingImage.getX() - curPosRadiusPx;
+            float screenY = ((bitmapHeight - pt.getY()) / scaleY) + mMappingImage.getY() - curPosRadiusPx;
+
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mCurrentPos.setX(screenX);
+                    mCurrentPos.setY(screenY);
+                    float degree = -(float) Math.toDegrees(poseTopic.getPose().getYaw());
+                    mCurrentPos.setRotation(degree);
+                }
+            });
         }
     }
 
@@ -152,7 +160,7 @@ public class MapManualFragment extends Fragment implements IMappingListener {
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(getActivity(),"webscoket connected error",1200).show();
+                Toast.makeText(activity,"webscoket connected error",1200).show();
             }
         });
     }

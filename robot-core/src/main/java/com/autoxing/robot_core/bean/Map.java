@@ -1,74 +1,55 @@
 package com.autoxing.robot_core.bean;
 
-import android.graphics.Point;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.autoxing.robot_core.util.NetUtil;
 
-import java.util.concurrent.RecursiveTask;
-
 public class Map {
-    private int id;
-    private String mapName;
-    private String url;
-    private Long createTime;
-    private float gridOriginX;
-    private float gridOriginY;
-    private float gridResolution;
+    private int mId;
+    private String mMapName;
+    private String mUrl;
+    private Long mCreateTime;
+    private float mOriginX;
+    private float mOriginY;
+    private float mResolution;
     private String mData = null;
-    private boolean isDetailLoaded = false;
+    private boolean mIsDetailLoaded = false;
 
-    public int getId() { return id; }
+    public int getId() { return mId; }
     public void setId(int id) {
-        this.id = id;
+        this.mId = id;
     }
 
     public String getMapName() {
-        return mapName;
+        return mMapName;
     }
     public void setMapName(String mapName) {
-        this.mapName = mapName;
+        this.mMapName = mapName;
     }
 
     public String getUrl() {
-        return url;
+        return mUrl;
     }
     public void setUrl(String url) {
-        this.url = url;
+        this.mUrl = url;
     }
 
-    public float getGridOriginX() { return gridOriginX; }
-    public void setGridOriginX(float gridOriginY) { this.gridOriginX = gridOriginY; }
+    public float getOriginX() { return mOriginX; }
+    public void setOriginX(float originX) { this.mOriginX = originX; }
 
-    public float getGridOriginY() { return gridOriginY; }
-    public void setGridOriginY(float gridOriginY) { this.gridOriginY = gridOriginY; }
+    public float getOriginY() { return mOriginY; }
+    public void setOriginY(float originY) { this.mOriginY = originY; }
 
-    public float getGridResolution() {
-        return gridResolution;
+    public float getResolution() {
+        return mResolution;
     }
-    public void setGridResolution(float gridResolution) {
-        this.gridResolution = gridResolution;
+    public void setResolution(float resolution) {
+        this.mResolution = resolution;
     }
 
-    public Long getCreateTime() { return createTime; }
+    public Long getCreateTime() { return mCreateTime; }
     public void setCreateTime(Long createTime) {
-        this.createTime = createTime;
-    }
-
-    public Location screenToWorld(int x, int y) {
-        Location location = new Location();
-        location.setX(gridOriginX + gridResolution * x);
-        location.setY(gridOriginY + gridResolution * y);
-        location.setZ(0);
-        return location;
-    }
-
-    public Point worldToScreen(Location location) {
-        Point pt = new Point();
-        pt.x = (int)((location.getX() - gridOriginX) / gridResolution);
-        pt.y = (int)((location.getY() - gridOriginY) / gridResolution);
-        return pt;
+        this.mCreateTime = createTime;
     }
 
     public String getData() {
@@ -79,9 +60,11 @@ public class Map {
         this.mData = data;
     }
 
+    public boolean isDetailLoaded() { return mIsDetailLoaded; }
+
     public boolean loadDetail() {
-        if (!isDetailLoaded) {
-            String res = NetUtil.syncReq(this.url);
+        if (!mIsDetailLoaded) {
+            String res = NetUtil.syncReq(this.mUrl);
             JSONObject jsonObject = null;
             try {
                 jsonObject = JSON.parseObject(res);
@@ -92,11 +75,16 @@ public class Map {
             if (jsonObject == null)
                 return false;
 
-            gridOriginX = jsonObject.getFloat("grid_origin_x");
-            gridOriginY = jsonObject.getFloat("grid_origin_y");
-            gridResolution = jsonObject.getFloat("grid_resolution");
-            isDetailLoaded = true;
+            mOriginX = jsonObject.getFloat("grid_origin_x");
+            mOriginY = jsonObject.getFloat("grid_origin_y");
+            mResolution = jsonObject.getFloat("grid_resolution");
+            mIsDetailLoaded = true;
         }
         return true;
+    }
+
+    public String downloadMap() {
+        String res = NetUtil.syncReq(NetUtil.getUrl(NetUtil.SERVICE_MAPS) + "/" + this.mId +  "/download?format=json", NetUtil.HTTP_METHOD.get);
+        return res;
     }
 }

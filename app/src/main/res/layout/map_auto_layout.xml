@@ -2,7 +2,7 @@
 <org.buraktamturk.loadingview.LoadingView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/loading_view"
-    app:lv_title="loading"
+    app:lv_title="calculating"
     app:lv_loading="false"
     android:layout_height="match_parent"
     android:layout_width="match_parent">
@@ -24,29 +24,41 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:src="@mipmap/robot"
-            android:clickable="false"
-            android:visibility="gone"/>
+            android:clickable="false"/>
 
-        <Button
-            android:id="@+id/btn_move"
-            android:layout_width="wrap_content"
+        <RelativeLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginRight="20dp"
-            android:layout_marginBottom="30dp"
-            android:layout_alignParentRight="true"
-            android:layout_gravity="bottom|right"
-            android:clickable="false"
-            android:background="@drawable/btn_selector"
-            android:text="Move"/>
+            android:layout_gravity="bottom">
 
-        <TextView
-            android:id="@+id/tv_screen_value"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="20dp"
-            android:layout_marginBottom="30dp"
-            android:layout_alignBaseline="@id/btn_move"
-            android:layout_gravity="bottom"/>
+            <Button
+                android:id="@+id/btn_move"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:layout_alignParentLeft="true"
+                android:background="@drawable/btn_selector"
+                android:layout_marginBottom="10dp"
+                android:text="Move"/>
+
+            <TextView
+                android:id="@+id/tv_screen_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:layout_centerInParent="true"/>
+
+            <Button
+                android:id="@+id/btn_cancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="10dp"
+                android:layout_alignParentRight="true"
+                android:background="@drawable/btn_selector"
+                android:layout_marginBottom="10dp"
+                android:text="Cancel"/>
+
+        </RelativeLayout>
 
     </FrameLayout>
 </org.buraktamturk.loadingview.LoadingView>

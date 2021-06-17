@@ -20,10 +20,10 @@ public class Rotation {
         this.mYaw = rhs.mYaw;
     }
 
-    public Rotation(float roll, float pitch, float yaw) {
-        this.mRoll = roll;
-        this.mPitch = pitch;
+    public Rotation(float yaw, float pitch, float roll) {
         this.mYaw = yaw;
+        this.mPitch = pitch;
+        this.mRoll = roll;
     }
 
     public float getRoll() {

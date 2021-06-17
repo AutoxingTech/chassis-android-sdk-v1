@@ -12,7 +12,6 @@
         android:id="@+id/iv_current_pos"
         android:layout_width="20dp"
         android:layout_height="20dp"
-        android:visibility="gone"
         android:src="@mipmap/robot" />
 
 </FrameLayout>

@@ -20,8 +20,6 @@ import com.bumptech.glide.request.RequestOptions;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 
 public class MapRvAdapter extends RecyclerView.Adapter<MapRvAdapter.MapTvHolder> {

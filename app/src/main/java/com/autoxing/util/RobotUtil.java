@@ -5,13 +5,13 @@ import android.widget.Toast;
 
 import com.autoxing.robot_core.AXRobotPlatform;
 import com.autoxing.robot_core.bean.ChassisStatus;
-import com.autoxing.x.util.CommonCallBack;
-import com.autoxing.x.util.ThreadPoolUtil;
+import com.autoxing.robot_core.util.CommonCallback;
+import com.autoxing.robot_core.util.ThreadPoolUtil;
 
 public class RobotUtil {
 
     public static void setChassisStatus(Activity context, ChassisStatus status) {
-        ThreadPoolUtil.run(new CommonCallBack() {
+        ThreadPoolUtil.runAsync(new CommonCallback() {
             @Override
             public void run() {
                 boolean succ = AXRobotPlatform.getInstance().setChassisStatus(status);
@@ -33,7 +33,7 @@ public class RobotUtil {
     }
 
     public static void getCurrentMapId(Activity context) {
-        ThreadPoolUtil.run(new CommonCallBack() {
+        ThreadPoolUtil.runAsync(new CommonCallback() {
             @Override
             public void run() {
                 int mapId = AXRobotPlatform.getInstance().getCurrentMapId();
