@@ -50,7 +50,6 @@ public class MapTwistFragment extends Fragment {
             public void getLocation(float x, float y) {
                 DecimalFormat fnum = new DecimalFormat("##0.00");
                 System.out.println("------------x = " + x + ", y = " + y);
-
             }
         });
     }

@@ -30,7 +30,7 @@ public class MapActionFragment extends Fragment implements View.OnTouchListener 
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         if (mLayout == null) {
-            mLayout = inflater.inflate(R.layout.map_action_layout, container,false);
+            mLayout = inflater.inflate(R.layout.map_action_layout, container, false);
             initView(mLayout);
             setListener();
         } else {
@@ -71,7 +71,7 @@ public class MapActionFragment extends Fragment implements View.OnTouchListener 
                             StringBuilder sb = new StringBuilder();
                             sb.append("failed to ");
                             sb.append(direction.toString().toLowerCase().replace("_", " "));
-                            Toast.makeText(getActivity(), sb.toString(),1200).show();
+                            Toast.makeText(getActivity(), sb.toString(), 1200).show();
                         } else {
                             mCanContinue = true;
                         }
@@ -97,7 +97,8 @@ public class MapActionFragment extends Fragment implements View.OnTouchListener 
                 case R.id.ibtn_down:
                     moveWithAction(MoveDirection.GO_BACKWARD);
                     break;
-                default:break;
+                default:
+                    break;
             }
         } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
             mCanContinue = true;

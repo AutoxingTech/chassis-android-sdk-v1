@@ -197,6 +197,12 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
         RobotUtil.setChassisStatus(getActivity(), ChassisStatus.AUTO);
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        AXRobotPlatform.getInstance().removeLisener(this);
+    }
+
     private void loadMapDetail() {
         ThreadPoolUtil.runAsync(new CommonCallback() {
             @Override

@@ -71,7 +71,10 @@ public class AXRobotPlatform {
     public void addLisener(IMappingListener listener) {
         mListeners.add(listener);
     }
-    public void removeLisener(IMappingListener listener) { mListeners.remove(listener); }
+    public void removeLisener(IMappingListener listener) {
+        if (!mListeners.isEmpty())
+            mListeners.remove(listener);
+    }
 
     // for internal
     public void enableBlockThread(boolean enabled) {
@@ -79,6 +82,7 @@ public class AXRobotPlatform {
     }
 
     private void notifyDataChanged() {
+        System.out.println("===robot-core=============== listener size is " + mListeners.size());
         for (int i = 0; i < mListeners.size(); ++i) {
             IMappingListener listener = mListeners.get(i);
             for (int j = 0; j < mOccupancyGrids.size(); ++j) {
@@ -321,12 +325,16 @@ public class AXRobotPlatform {
         return maps;
     }
 
-    public boolean addMap(String mapData) {
+    public AXRobotErrorCode addMap(String mapData) {
+        AXRobotErrorCode errorCode = AXRobotErrorCode.NONE;
         Response res = NetUtil.syncReq3(NetUtil.getUrl(NetUtil.SERVICE_MAPS) + "?format=json", mapData, NetUtil.HTTP_METHOD.post);
         if (res == null)
-            return false;
+            return AXRobotErrorCode.NET_ERROR;
 
-        return res.code() == 200;
+        if (res.code() != 200)
+            return AXRobotErrorCode.GENERATE_ERROR;
+
+        return AXRobotErrorCode.NONE;
     }
 
     public boolean updateMap(String mapData, boolean partial) {

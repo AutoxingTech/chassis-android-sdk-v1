@@ -105,6 +105,12 @@ public class MapManualFragment extends Fragment implements IMappingListener {
     }
 
     @Override
+    public void onDestroy() {
+        super.onDestroy();
+        AXRobotPlatform.getInstance().removeLisener(this);
+    }
+
+    @Override
     public void onConnected(String status) {
         getActivity().runOnUiThread(new Runnable() {
             @Override

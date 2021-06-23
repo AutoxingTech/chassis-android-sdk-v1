@@ -47,15 +47,12 @@ public class MappingFragment extends Fragment implements IMappingListener, View.
     private LoadingView mLoadingView;
     private CoordinateUtil mCoordinateUtil = new CoordinateUtil();
 
-    public MappingFragment() {
-        AXRobotPlatform.getInstance().addLisener(this);
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         if (mLayout == null) {
             mLayout = inflater.inflate(R.layout.mapping_layout, container,false);
+            AXRobotPlatform.getInstance().addLisener(this);
             mScreenSize = GlobalUtil.getScreenSize(getContext());
             initView(mLayout);
             setListener();
@@ -82,6 +79,12 @@ public class MappingFragment extends Fragment implements IMappingListener, View.
         mBtnStart.setOnClickListener(this);
         mBtnCancel.setOnClickListener(this);
         mBtnStop.setOnClickListener(this);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        AXRobotPlatform.getInstance().removeLisener(this);
     }
 
     @Override
@@ -161,7 +164,7 @@ public class MappingFragment extends Fragment implements IMappingListener, View.
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(getActivity(),"webscoket connected error",1200).show();
+                Toast.makeText(getActivity(),"webscoket connecte error",1200).show();
             }
         });
     }
