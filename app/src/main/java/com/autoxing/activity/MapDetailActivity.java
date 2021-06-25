@@ -1,6 +1,11 @@
 package com.autoxing.activity;
 
 import android.annotation.SuppressLint;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
@@ -46,11 +51,19 @@ public class MapDetailActivity extends BaseActivity {
     private View mLayout = null;
     private CommonTabLayout mTabLayout;
     private CustomViewPager mViewPager;
+    private SensorEventListener mShakeListener;
+    private SensorManager mSensorManager;
+    private MediaPlayer mPlayer;
+
+    private boolean mShakeFlag = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map_detail);
+
+        mSensorManager = (SensorManager)getSystemService(this.SENSOR_SERVICE);
+        mPlayer = MediaPlayer.create(this, R.raw.shake_sound);
 
         initView();
         setListener();
@@ -96,6 +109,10 @@ public class MapDetailActivity extends BaseActivity {
         mTabLayout.setOnTabSelectListener(new OnTabSelectListener() {
             @Override
             public void onTabSelect(int position) {
+                if (position == 0)
+                    mShakeFlag = false;
+                else
+                    mShakeFlag = true;
                 mViewPager.setCurrentItem(position);
             }
 
@@ -121,6 +138,46 @@ public class MapDetailActivity extends BaseActivity {
 
             }
         });
+
+        mShakeListener = new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                if (mShakeFlag) {
+                    return;
+                }
+
+                float[] values = event.values;
+                float x = Math.abs(values[0]);
+                float y = Math.abs(values[1]);
+                float z = Math.abs(values[2]);
+                if (x > 30 || y > 30 || z > 30) {
+                    mShakeFlag = true;
+
+                    mPlayer.start();
+                    if (mTabLayout.getCurrentTab() == 0) {
+                        mViewPager.setCurrentItem(2);
+                    }
+                }
+            }
+
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+            }
+        };
+    }
+
+    @Override
+    protected void onResume() {
+        mSensorManager.registerListener(mShakeListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+                SensorManager.SENSOR_DELAY_FASTEST);
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        mSensorManager.unregisterListener(mShakeListener);
+        super.onPause();
     }
 
     @Override

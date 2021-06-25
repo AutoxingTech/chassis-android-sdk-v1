@@ -306,6 +306,7 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
     private void cancel() {
         if (mMoveAction == null) {
             Toast.makeText(getContext(),"no move action!", Toast.LENGTH_SHORT).show();
+            return;
         }
 
         mLoadingView.setLoading(true);
