@@ -129,14 +129,9 @@ public class Mapping {
         return res.code() == 200;
     }
 
-    public Map downloadMap() {
+    public String downloadMapData() {
         String res = NetUtil.syncReq(NetUtil.getUrl(NetUtil.SERVICE_MAPPINGS) + "/" + this.mId +  "/download?format=json", NetUtil.HTTP_METHOD.get);
-        if (res == null)
-            return null;
-
-        Map map = new Map();
-        map.setData(res);
-        return map;
+        return res;
     }
 
     public boolean delete() {

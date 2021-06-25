@@ -6,18 +6,58 @@ import com.autoxing.robot_core.util.NetUtil;
 
 public class Map {
     private int mId;
+    private String mUid;
     private String mMapName;
-    private String mUrl;
     private Long mCreateTime;
     private float mOriginX;
     private float mOriginY;
     private float mResolution;
-    private String mData = null;
-    private boolean mIsDetailLoaded = false;
+    private int mMapVersion;
+    private int mOverlayVersion;
+
+    private String mData;
+    private String mUrl;
+    private boolean mIsDetailLoaded;
+
+    public Map() {
+        mId = -1;
+        mUid = mMapName = null;
+        mCreateTime = -1l;
+        mOriginX = .0f;
+        mOriginY = .0f;
+        mResolution = .0f;
+        mMapVersion = Integer.MAX_VALUE;
+        mOverlayVersion = Integer.MAX_VALUE;
+
+        mData = null;
+        mUrl = null;
+        mIsDetailLoaded = false;
+    }
+
+    public Map(JSONObject json) {
+        mId = json.getInteger("id");
+        mUid = json.getString("uid");
+        mMapName = json.getString("map_name");
+        mCreateTime = json.getLong("create_time");
+        mOriginX = json.getFloat("grid_origin_x");
+        mOriginY = json.getFloat("grid_origin_y");
+        mResolution = json.getFloat("grid_resolution");
+        mMapVersion = json.getInteger("map_version");
+        mOverlayVersion = json.getInteger("overlays_version");
+
+        mData = null;
+        mUrl = null;
+        mIsDetailLoaded = false;
+    }
 
     public int getId() { return mId; }
     public void setId(int id) {
         this.mId = id;
+    }
+
+    public String getUid() { return mUid; }
+    public void setUid(String uid) {
+        this.mUid = uid;
     }
 
     public String getMapName() {
@@ -86,5 +126,29 @@ public class Map {
     public String downloadMap() {
         String res = NetUtil.syncReq(NetUtil.getUrl(NetUtil.SERVICE_MAPS) + "/" + this.mId +  "/download?format=json", NetUtil.HTTP_METHOD.get);
         return res;
+    }
+
+    public int getMapVersion() {
+        return mMapVersion;
+    }
+
+    public void setMapVersion(int mapVersion) {
+        this.mMapVersion = mapVersion;
+    }
+
+    public int getOverlayVersion() {
+        return mOverlayVersion;
+    }
+
+    public void setOverlayVersion(int overlayVersion) {
+        this.mOverlayVersion = overlayVersion;
+    }
+
+    public boolean isMapNeedUpdate(int mapVersion) {
+        return mMapVersion < mapVersion;
+    }
+
+    public boolean isOverlayNeedUpdate(int overlayVersion) {
+        return mOverlayVersion < overlayVersion;
     }
 }

@@ -327,7 +327,7 @@ public class AXRobotPlatform {
 
     public AXRobotErrorCode addMap(String mapData) {
         AXRobotErrorCode errorCode = AXRobotErrorCode.NONE;
-        Response res = NetUtil.syncReq3(NetUtil.getUrl(NetUtil.SERVICE_MAPS) + "?format=json", mapData, NetUtil.HTTP_METHOD.post);
+        Response res = NetUtil.syncReq3(NetUtil.getUrl(NetUtil.SERVICE_MAPS) + "/", mapData, NetUtil.HTTP_METHOD.post);
         if (res == null)
             return AXRobotErrorCode.NET_ERROR;
 
@@ -337,29 +337,74 @@ public class AXRobotPlatform {
         return AXRobotErrorCode.NONE;
     }
 
-    public boolean updateMap(String mapData, boolean partial) {
-        JSONObject json = JSON.parseObject(mapData);
-        int mapId = json.getInteger("id");
+    public AXRobotErrorCode updateMap(int mapId, String mapData, boolean partial) {
         NetUtil.HTTP_METHOD method = partial ? NetUtil.HTTP_METHOD.patch : NetUtil.HTTP_METHOD.put;
         Response res = NetUtil.syncReq3(NetUtil.getUrl(NetUtil.SERVICE_MAPS) + "/" + mapId + "?format=json", mapData, method);
         if (res == null)
-            return false;
+            return AXRobotErrorCode.NET_ERROR;
 
-        return res.code() == 200;
+        if (res.code() != 200)
+            return AXRobotErrorCode.GENERATE_ERROR;
+
+        return AXRobotErrorCode.NONE;
     }
 
-    public boolean setCurrentMap(Map map, Pose pose) {
-        Response res = null;
+    public AXRobotErrorCode addOrUpdateMap(String data) {
+        AXRobotErrorCode errorCode = AXRobotErrorCode.NONE;
 
-        String data = map.getData();
-        if (data == null) {
-            HashMap<String, Integer> hashmap = new HashMap();
-            hashmap.put("map_id", map.getId());
-            res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_CURRENT_MAP), hashmap, NetUtil.HTTP_METHOD.post);
-        } else {
-            res = NetUtil.syncReq3(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_CURRENT_MAP), data, NetUtil.HTTP_METHOD.post);
+        JSONObject json = JSON.parseObject(data);
+        String mapUid = json.getString("uid");
+
+        boolean partial = true;
+        if (json.containsKey("map_data")) {
+            JSONObject mapDataJson = json.getJSONObject("map_data");
+            json.remove("map_data");
+            json.putAll(mapDataJson);
+
+            if (json.containsKey("overlays")) {
+                partial = false;
+            }
         }
 
+        Map map = getMapWithUid(mapUid);
+        if (map == null) {
+            errorCode = addMap(json.toString());
+        } else {
+            errorCode = updateMap(map.getId(), json.toString(), partial);
+        }
+
+        return errorCode;
+    }
+
+    public Map getMapWithUid(String mapUid) {
+        String res = NetUtil.syncReq(NetUtil.getUrl(NetUtil.SERVICE_MAPS) + "?format=json&" + "uid=" + mapUid, NetUtil.HTTP_METHOD.get);
+        JSONObject jsonObject = null;
+        try {
+            jsonObject = JSON.parseObject(res);
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+        }
+
+        if (jsonObject == null)
+            return null;
+
+        Map map = new Map(jsonObject);
+        return map;
+    }
+
+    public boolean setCurrentMap(String mapUid, Pose pose) {
+        Map map = getMapWithUid(mapUid);
+        if (map == null) {
+            return false;
+        }
+
+        return setCurrentMap(map.getId(), pose);
+    }
+
+    public boolean setCurrentMap(int id, Pose pose) {
+        HashMap<String, Integer> hashmap = new HashMap();
+        hashmap.put("map_id", id);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_CURRENT_MAP), hashmap, NetUtil.HTTP_METHOD.post);
         if (res == null)
             return false;
 
@@ -387,7 +432,7 @@ public class AXRobotPlatform {
         if (jsonObject.get("map_id") == null)
             return -1;
 
-        return  jsonObject.getInteger("map_id");
+        return jsonObject.getInteger("map_id");
     }
 
     public boolean removeCurrentMap() {
