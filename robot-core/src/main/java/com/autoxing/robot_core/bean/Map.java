@@ -118,6 +118,8 @@ public class Map {
             mOriginX = jsonObject.getFloat("grid_origin_x");
             mOriginY = jsonObject.getFloat("grid_origin_y");
             mResolution = jsonObject.getFloat("grid_resolution");
+            mMapVersion = jsonObject.getInteger("map_version");
+            mOverlayVersion = jsonObject.getInteger("overlays_version");
             mIsDetailLoaded = true;
         }
         return true;

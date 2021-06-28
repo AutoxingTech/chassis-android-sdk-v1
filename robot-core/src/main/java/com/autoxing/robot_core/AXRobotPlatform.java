@@ -332,7 +332,7 @@ public class AXRobotPlatform {
         if (res == null)
             return AXRobotErrorCode.NET_ERROR;
 
-        if (res.code() != 200)
+        if (res.code() / 100 != 2)
             return AXRobotErrorCode.GENERATE_ERROR;
 
         return AXRobotErrorCode.NONE;
