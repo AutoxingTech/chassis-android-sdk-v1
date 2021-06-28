@@ -112,7 +112,7 @@ public class MapListFragment extends Fragment implements IMapAdapterListener {
         ThreadPoolUtil.runAsync(new CommonCallback() {
             @Override
             public void run() {
-                boolean succ = AXRobotPlatform.getInstance().setCurrentMap(map.getId(), new Pose());
+                boolean succ = AXRobotPlatform.getInstance().setCurrentMap(map.getUid(), new Pose());
 
                 getActivity().runOnUiThread(new Runnable() {
                     @Override

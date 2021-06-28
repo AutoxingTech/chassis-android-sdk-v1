@@ -316,6 +316,7 @@ public class AXRobotPlatform {
                 JSONObject jsonObject =  jsonArr.getJSONObject(i);
                 Map map= new Map();
                 map.setId(jsonObject.getInteger("id"));
+                map.setUid(jsonObject.getString("uid"));
                 map.setMapName(jsonObject.getString("map_name"));
                 map.setCreateTime(jsonObject.getLong("create_time"));
                 map.setUrl(jsonObject.getString("url"));
@@ -377,18 +378,31 @@ public class AXRobotPlatform {
     }
 
     public Map getMapWithUid(String mapUid) {
-        String res = NetUtil.syncReq(NetUtil.getUrl(NetUtil.SERVICE_MAPS) + "?format=json&" + "uid=" + mapUid, NetUtil.HTTP_METHOD.get);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_MAPS) + "/search?format=json&" + "uid=" + mapUid, NetUtil.HTTP_METHOD.get);
+        if (res == null)
+            return null;
+
+        if (res.code() != 200)
+            return null;
+
         JSONObject jsonObject = null;
         try {
-            jsonObject = JSON.parseObject(res);
-        } catch (RuntimeException e) {
+            jsonObject = JSON.parseObject(res.body().string());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassCastException e) {
             e.printStackTrace();
         }
 
         if (jsonObject == null)
             return null;
 
-        Map map = new Map(jsonObject);
+        Map map = new Map();
+        map.setId(jsonObject.getInteger("id"));
+        map.setUid(jsonObject.getString("uid"));
+        map.setMapName(jsonObject.getString("map_name"));
+        map.setCreateTime(jsonObject.getLong("create_time"));
+        map.setUrl(jsonObject.getString("url"));
         return map;
     }
 
