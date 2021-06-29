@@ -389,8 +389,7 @@ public class AXRobotPlatform {
                 } else {
                     return AXRobotErrorCode.GENERATE_ERROR;
                 }
-            }
-            else {
+            } else {
                 return AXRobotErrorCode.GENERATE_ERROR;
             }
         }
@@ -431,24 +430,26 @@ public class AXRobotPlatform {
     }
 
     public Map getMapWithUid(String mapUid) {
-        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_MAPS) + "/search?format=json&" + "uid=" + mapUid, NetUtil.HTTP_METHOD.get);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_MAPS) + "/?format=json&" + "uid=" + mapUid, NetUtil.HTTP_METHOD.get);
         if (res == null)
             return null;
 
         if (res.code() != 200)
             return null;
 
-        JSONObject jsonObject = null;
+        JSONArray jsonArray = null;
         try {
-            jsonObject = JSON.parseObject(res.body().string());
+            jsonArray = JSON.parseArray(res.body().string());
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassCastException e) {
             e.printStackTrace();
         }
 
-        if (jsonObject == null)
+        if (jsonArray == null || jsonArray.size() == 0)
             return null;
+
+        JSONObject jsonObject = jsonArray.getJSONObject(0);
 
         Map map = new Map();
         map.setId(jsonObject.getInteger("id"));
@@ -508,6 +509,26 @@ public class AXRobotPlatform {
             return false;
 
         return res.code() == 200;
+    }
+
+    public void deleteMaps(String[] mapUids, boolean exclude) {
+        boolean flag = false;
+        List<Map> maps = getMaps();
+        for (Map map : maps) {
+            flag = false;
+            String uid = map.getUid();
+            for (String mapUid : mapUids) {
+                if (mapUid.equals(uid)) {
+                    flag = true;
+                    break;
+                }
+            }
+
+            if ((exclude && !flag)
+            || (!exclude && flag)) {
+                map.delete();
+            }
+        }
     }
 
     public Pose getPose() {

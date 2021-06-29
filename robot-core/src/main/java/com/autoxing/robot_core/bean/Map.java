@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.autoxing.robot_core.util.NetUtil;
 
+import okhttp3.Response;
+
 public class Map {
     private int mId;
     private String mUid;
@@ -100,6 +102,22 @@ public class Map {
         this.mData = data;
     }
 
+    public int getMapVersion() {
+        return mMapVersion;
+    }
+
+    public void setMapVersion(int mapVersion) {
+        this.mMapVersion = mapVersion;
+    }
+
+    public int getOverlayVersion() {
+        return mOverlayVersion;
+    }
+
+    public void setOverlayVersion(int overlayVersion) {
+        this.mOverlayVersion = overlayVersion;
+    }
+
     public boolean isDetailLoaded() { return mIsDetailLoaded; }
 
     public boolean loadDetail() {
@@ -130,27 +148,19 @@ public class Map {
         return res;
     }
 
-    public int getMapVersion() {
-        return mMapVersion;
-    }
-
-    public void setMapVersion(int mapVersion) {
-        this.mMapVersion = mapVersion;
-    }
-
-    public int getOverlayVersion() {
-        return mOverlayVersion;
-    }
-
-    public void setOverlayVersion(int overlayVersion) {
-        this.mOverlayVersion = overlayVersion;
-    }
-
     public boolean isMapNeedUpdate(int mapVersion) {
-        return mMapVersion < mapVersion;
+        return mMapVersion != mapVersion;
     }
 
     public boolean isOverlayNeedUpdate(int overlayVersion) {
-        return mOverlayVersion < overlayVersion;
+        return mOverlayVersion != overlayVersion;
+    }
+
+    public boolean delete() {
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_MAPS) + "/" + this.mId +  "?format=json", NetUtil.HTTP_METHOD.delete);
+        if (res == null)
+            return false;
+
+        return res.code() / 100 == 2;
     }
 }

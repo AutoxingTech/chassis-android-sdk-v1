@@ -139,6 +139,6 @@ public class Mapping {
         if (res == null)
             return false;
 
-        return res.code() == 204;
+        return res.code() / 100 == 2;
     }
 }
