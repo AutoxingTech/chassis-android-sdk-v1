@@ -2,7 +2,6 @@ package com.autoxing.robot_core.bean;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Point;
 import android.util.Base64;
 
 import java.io.ByteArrayInputStream;

@@ -332,8 +332,31 @@ public class AXRobotPlatform {
         if (res == null)
             return AXRobotErrorCode.NET_ERROR;
 
-        if (res.code() / 100 != 2)
-            return AXRobotErrorCode.GENERATE_ERROR;
+        if (res.code() / 100 != 2) {
+            if (res.code() == 400) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = JSON.parseObject(res.body().string());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (ClassCastException e) {
+                    e.printStackTrace();
+                }
+
+                if (jsonObject == null) {
+                    return AXRobotErrorCode.GENERATE_ERROR;
+                }
+
+                if (jsonObject.containsKey("map_name")) {
+                    return AXRobotErrorCode.MAP_NAME_EXIT;
+                } else {
+                    return AXRobotErrorCode.GENERATE_ERROR;
+                }
+            }
+            else {
+                return AXRobotErrorCode.GENERATE_ERROR;
+            }
+        }
 
         return AXRobotErrorCode.NONE;
     }
@@ -344,8 +367,33 @@ public class AXRobotPlatform {
         if (res == null)
             return AXRobotErrorCode.NET_ERROR;
 
-        if (res.code() != 200)
-            return AXRobotErrorCode.GENERATE_ERROR;
+        if (res.code() / 100 != 2) {
+            if (res.code() == 400) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = JSON.parseObject(res.body().string());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (ClassCastException e) {
+                    e.printStackTrace();
+                }
+
+                if (jsonObject == null) {
+                    return AXRobotErrorCode.GENERATE_ERROR;
+                }
+
+                if (jsonObject.containsKey("map_version")) {
+                    return AXRobotErrorCode.INVALID_MAP_VERSION;
+                } else if (jsonObject.containsKey("overlays_version")) {
+                    return AXRobotErrorCode.INVALID_OVERLAY_VERSION;
+                } else {
+                    return AXRobotErrorCode.GENERATE_ERROR;
+                }
+            }
+            else {
+                return AXRobotErrorCode.GENERATE_ERROR;
+            }
+        }
 
         return AXRobotErrorCode.NONE;
     }
@@ -365,6 +413,11 @@ public class AXRobotPlatform {
             if (json.containsKey("overlays")) {
                 partial = false;
             }
+        }
+
+        // temp patch
+        if (json.containsKey("overlays")) {
+            json.remove("overlays");
         }
 
         Map map = getMapWithUid(mapUid);
