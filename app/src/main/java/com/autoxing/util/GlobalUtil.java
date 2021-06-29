@@ -4,12 +4,14 @@ import android.content.Context;
 import android.graphics.Point;
 import android.view.WindowManager;
 
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.TimeZone;
 
 public class GlobalUtil {
 
@@ -34,5 +36,13 @@ public class GlobalUtil {
     public static int yawToAngel(float yaw) {
 
         return  0;
+    }
+
+    public static ImageLoader getImageLoader(Context context) {
+        ImageLoader imageLoader = ImageLoader.getInstance();
+        if (!imageLoader.isInited()) {
+            imageLoader.init(ImageLoaderConfiguration.createDefault(context));
+        }
+        return imageLoader;
     }
 }

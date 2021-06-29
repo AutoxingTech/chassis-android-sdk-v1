@@ -3,6 +3,7 @@ package com.autoxing.fragment;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Point;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -33,9 +34,16 @@ import com.autoxing.util.GlobalUtil;
 import com.autoxing.util.RobotUtil;
 import com.autoxing.robot_core.util.CommonCallback;
 import com.autoxing.robot_core.util.ThreadPoolUtil;
+import com.autoxing.view.HugeImageRegionLoader;
+import com.autoxing.view.PinchImageView;
+import com.autoxing.view.TileDrawable;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.transition.Transition;
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
+import com.nostra13.universalimageloader.core.assist.FailReason;
+import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
+import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 
 import org.buraktamturk.loadingview.LoadingView;
 
@@ -49,7 +57,7 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
     private LoadingView mLoadingView;
     private FrameLayout mContainer;
     private TextView mCoordinateValue;
-    private ImageView mIvMap;
+    private PinchImageView mIvMap;
     private ImageView mCurrentPos;
     private ImageView mAnchor = null;
     private Button mBtnMove;
@@ -61,6 +69,8 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
 
     private MoveAction mMoveAction = null;
     private CoordinateUtil mCoordinateUtil = null;
+
+    // private TileDrawable mMapDrawable;
 
     private DecimalFormat mDf = new DecimalFormat("##0.00");
 
@@ -93,7 +103,7 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
     private void initView(View view) {
         mLoadingView = (LoadingView) view.findViewById(R.id.loading_view);
         mContainer = (FrameLayout) view.findViewById(R.id.fl_continer);
-        mIvMap = (ImageView) view.findViewById(R.id.iv_map);
+        mIvMap = (PinchImageView) view.findViewById(R.id.iv_map);
         mCoordinateValue = (TextView) view.findViewById(R.id.tv_screen_value);
         mCurrentPos = (ImageView) view.findViewById(R.id.iv_current_pos);
         mBtnMove = (Button) view.findViewById(R.id.btn_move);
@@ -101,7 +111,7 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
     }
 
     private void initData() {
-        Glide.with(getContext()).asBitmap().load(mMap.getUrl() + ".png").into(new SimpleTarget<Bitmap>() {
+        /*Glide.with(getContext()).asBitmap().load(mMap.getUrl() + ".png").into(new SimpleTarget<Bitmap>() {
 
             @Override
             public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
@@ -119,6 +129,57 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                 mIvMap.setScaleType(ImageView.ScaleType.FIT_XY);
                 mIvMap.setImageBitmap(resource);
             }
+        });*/
+
+        /*mIvMap.post(new Runnable() {
+            @Override
+            public void run() {
+                mMapDrawable = new TileDrawable();
+                mMapDrawable.setInitCallback(new TileDrawable.InitCallback() {
+                    @Override
+                    public void onInit() {
+                        mIvMap.setImageDrawable(mMapDrawable);
+                    }
+                });
+                mMapDrawable.init(new HugeImageRegionLoader(getActivity(), Uri.parse(mMap.getUrl() + ".png")), new Point(mIvMap.getWidth(), mIvMap.getHeight()));
+            }
+        });*/
+
+
+        final DisplayImageOptions thumbOptions = new DisplayImageOptions.Builder().resetViewBeforeLoading(true).cacheInMemory(true).build();
+        GlobalUtil.getImageLoader(getActivity()).displayImage(mMap.getUrl() + ".png", mIvMap, thumbOptions, new ImageLoadingListener(){
+
+            @Override
+            public void onLoadingStarted(String imageUri, View view) {
+
+            }
+
+            @Override
+            public void onLoadingFailed(String imageUri, View view, FailReason failReason) {
+
+            }
+
+            @Override
+            public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
+                mBitmap = loadedImage;
+                int mapWidth = loadedImage.getWidth();
+                int mapHeight = loadedImage.getHeight();
+                float scale = (float)mapHeight / mapWidth;
+
+                int imageViewHeight = (int)(mScreenSize.x * scale);
+
+                FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) mIvMap.getLayoutParams();
+                params.width = mScreenSize.x;
+                params.height = imageViewHeight;
+                mIvMap.setLayoutParams(params);
+                mIvMap.setScaleType(ImageView.ScaleType.FIT_XY);
+                mIvMap.setImageBitmap(loadedImage);
+            }
+
+            @Override
+            public void onLoadingCancelled(String imageUri, View view) {
+
+            }
         });
 
         loadMapDetail();
@@ -127,7 +188,7 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
     private void setListener() {
         mBtnMove.setOnClickListener(this);
         mBtnCancel.setOnClickListener(this);
-        mIvMap.setOnTouchListener(new View.OnTouchListener() {
+        /*mIvMap.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 if(event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -188,7 +249,7 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                 }
                 return true;
             }
-        });
+        });*/
     }
 
     @Override
@@ -199,6 +260,9 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
 
     @Override
     public void onDestroy() {
+        /*if (mMapDrawable != null) {
+            mMapDrawable.recycle();
+        }*/
         super.onDestroy();
         AXRobotPlatform.getInstance().removeLisener(this);
     }

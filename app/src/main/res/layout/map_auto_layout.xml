@@ -12,12 +12,11 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <ImageView
+        <com.autoxing.view.PinchImageView
             android:id="@+id/iv_map"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:src="@color/content_background"
-            android:clickable="true"/>
+            android:src="@color/content_background"/>
 
         <ImageView
             android:id="@+id/iv_current_pos"
