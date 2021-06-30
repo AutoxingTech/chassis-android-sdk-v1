@@ -17,6 +17,7 @@ public class MoveAction extends IAction {
         for (;;) {
             status = getCurrentStatus();
             if (status != ActionStatus.MOVING) {
+                mStatus = status;
                 return status;
             }
         }
@@ -26,18 +27,22 @@ public class MoveAction extends IAction {
     public boolean cancel() {
         HashMap hashMap = new HashMap();
         hashMap.put("state", "cancelled");
-        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES) + "/" + this.id +  "?format=json", hashMap, NetUtil.HTTP_METHOD.patch);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES) + "/" + this.mId +  "?format=json", hashMap, NetUtil.HTTP_METHOD.patch);
         if (res == null)
             return false;
 
-        return res.code() == 200;
+        boolean succ = res.code() / 100 == 2;
+        if (succ)
+            mStatus = ActionStatus.CANCELLED;
+
+        return succ;
     }
 
     @Override
     public Path getRemainingPath() { return new Path(); }
 
     private ActionStatus getCurrentStatus() {
-        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES) + "/" + this.id +  "?format=json", NetUtil.HTTP_METHOD.get);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES) + "/" + this.mId +  "?format=json", NetUtil.HTTP_METHOD.get);
         if (res == null)
             return ActionStatus.FAILED;
 
@@ -57,6 +62,7 @@ public class MoveAction extends IAction {
             return ActionStatus.FAILED;
 
         String stateStr = jsonObject.getString("state");
-        return ActionStatus.valueOf(stateStr.toUpperCase());
+        mStatus = ActionStatus.valueOf(stateStr.toUpperCase());
+        return mStatus;
     }
 }
