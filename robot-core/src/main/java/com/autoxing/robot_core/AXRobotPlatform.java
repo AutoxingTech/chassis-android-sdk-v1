@@ -643,14 +643,30 @@ public class AXRobotPlatform {
     }
 
     public MoveAction getCurrentAction() {
-        List<MoveAction> moveActions = getMoveActions();
-        for (int i = 0; i < moveActions.size(); i++) {
-            MoveAction action = moveActions.get(i);
-            if (action.getStatus() == ActionStatus.MOVING) {
-                return action;
-            }
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_REMOTE_ACTION) + "/latest", NetUtil.HTTP_METHOD.post);
+        if (res == null)
+            return null;
+
+        if (res.code() / 100 != 2)
+            return null;
+
+        JSONObject jsonObject = null;
+        try {
+            jsonObject = JSON.parseObject(res.body().string());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassCastException e) {
+            e.printStackTrace();
         }
-        return null;
+
+        if (jsonObject == null)
+            return null;
+
+        MoveAction action = new MoveAction();
+        action.setId(jsonObject.getInteger("id"));
+        String stateStr = jsonObject.getString("state");
+        action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
+        return action;
     }
 
     public boolean moveWithAction(MoveDirection direction) {
