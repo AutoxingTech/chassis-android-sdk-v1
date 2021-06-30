@@ -11,7 +11,7 @@ public class IAction {
     public void setStatus(ActionStatus status) { this.status = status; }
 
     public ActionStatus waitUntilDone() {
-        return ActionStatus.ERROR;
+        return ActionStatus.FAILED;
     }
 
     public boolean cancel() {

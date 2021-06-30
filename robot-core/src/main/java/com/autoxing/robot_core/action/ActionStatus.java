@@ -4,5 +4,5 @@ public enum ActionStatus {
     MOVING,
     FINISHED,
     CANCELLED,
-    ERROR
+    FAILED
 }

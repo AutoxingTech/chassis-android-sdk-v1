@@ -13,7 +13,7 @@ public class MoveAction extends IAction {
 
     @Override
     public ActionStatus waitUntilDone() {
-        ActionStatus status = ActionStatus.ERROR;
+        ActionStatus status = ActionStatus.FAILED;
         for (;;) {
             status = getCurrentStatus();
             if (status != ActionStatus.MOVING) {
@@ -39,10 +39,10 @@ public class MoveAction extends IAction {
     private ActionStatus getCurrentStatus() {
         Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES) + "/" + this.id +  "?format=json", NetUtil.HTTP_METHOD.get);
         if (res == null)
-            return ActionStatus.ERROR;
+            return ActionStatus.FAILED;
 
         if (res.code() != 200)
-            return ActionStatus.ERROR;
+            return ActionStatus.FAILED;
 
         JSONObject jsonObject = null;
         try {
@@ -54,7 +54,7 @@ public class MoveAction extends IAction {
         }
 
         if (jsonObject == null)
-            return ActionStatus.ERROR;
+            return ActionStatus.FAILED;
 
         String stateStr = jsonObject.getString("state");
         return ActionStatus.valueOf(stateStr.toUpperCase());

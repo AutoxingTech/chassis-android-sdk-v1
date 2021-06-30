@@ -82,7 +82,6 @@ public class AXRobotPlatform {
     }
 
     private void notifyDataChanged() {
-        System.out.println("===robot-core=============== listener size is " + mListeners.size());
         for (int i = 0; i < mListeners.size(); ++i) {
             IMappingListener listener = mListeners.get(i);
             for (int j = 0; j < mOccupancyGrids.size(); ++j) {
