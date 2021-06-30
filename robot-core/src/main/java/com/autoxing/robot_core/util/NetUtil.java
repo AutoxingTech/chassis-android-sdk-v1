@@ -34,6 +34,9 @@ public class NetUtil {
     public static final String SERVICE_CHASSIS_REMOTE_TWIST = "/chassis/remote/twist";
     public static final String SERVICE_WS_TOPICS = "/ws/topics";
 
+    public static final String SERVICE_TOKEN_KEY = "Authorization";
+    //public static final String SERVICE_TOKEN_VALUE = "Token 8a3c5e000d75fa6322abe5fe23af778c0a95a860";
+    private static String serviceToken = "8a3c5e000d75fa6322abe5fe23af778c0a95a860";
 
     private static OkHttpClient okHttpClient = new OkHttpClient.Builder()
             .connectTimeout(20, TimeUnit.SECONDS) //连接超时
@@ -42,6 +45,14 @@ public class NetUtil {
 
     public static void setUrlBase(String url){
         NetUtil.baseUrl = url;
+    }
+
+    public static void setServiceToken(String token){
+        serviceToken = token;
+    }
+
+    public static String getServiceToken(){
+        return "Token " + serviceToken;
     }
 
     public static String getUrl(String serviceName) {
@@ -179,33 +190,35 @@ public class NetUtil {
 
     private static Response syncReq3Imple(String url, String content, HTTP_METHOD httpMethod) {
         Request request = null;
+        Request.Builder builder = new Request.Builder().url(url).addHeader(SERVICE_TOKEN_KEY, getServiceToken());
+
         if (content == null) {
             if (httpMethod == HTTP_METHOD.post) {
                 MediaType mediaType = MediaType.parse("application/json;charset=utf-8");
                 RequestBody body = RequestBody.create(null, "");
-                request = new Request.Builder().url(url).post(body).build();
+                request = builder.post(body).build();
             } else if (httpMethod == HTTP_METHOD.patch) {
                 MediaType mediaType = MediaType.parse("application/json;charset=utf-8");
                 RequestBody body = RequestBody.create(null, "");
-                request = new Request.Builder().url(url).patch(body).build();
+                request = builder.patch(body).build();
             } else if (httpMethod == HTTP_METHOD.delete) {
                 FormBody body = new FormBody.Builder().build();
-                request = new Request.Builder().url(url).delete(body).build();
+                request = builder.delete(body).build();
             } else {
-                request = new Request.Builder().url(url).build();
+                request = builder.build();
             }
         } else {
             MediaType mediaType = MediaType.parse("application/json;charset=utf-8");
             RequestBody body = RequestBody.create(mediaType, content);
 
             if (httpMethod == HTTP_METHOD.post) {
-                request = new Request.Builder().url(url).post(body).build();
+                request = builder.post(body).build();
             } else if (httpMethod == HTTP_METHOD.patch) {
-                request = new Request.Builder().url(url).patch(body).build();
+                request = builder.patch(body).build();
             } else if (httpMethod == HTTP_METHOD.put) {
-                request = new Request.Builder().url(url).put(body).build();
+                request = builder.put(body).build();
             } else {
-                request = new Request.Builder().url(url).build();
+                request = builder.build();
             }
         }
 

@@ -13,9 +13,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.autoxing.controller.R;
 import com.autoxing.robot_core.bean.Mapping;
+import com.autoxing.robot_core.util.NetUtil;
 import com.autoxing.util.GlobalUtil;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.model.GlideUrl;
+import com.bumptech.glide.load.model.LazyHeaders;
 import com.bumptech.glide.request.RequestOptions;
 
 import org.jetbrains.annotations.NotNull;
@@ -65,8 +68,12 @@ public class MappingRvAdapter extends RecyclerView.Adapter<MappingRvAdapter.Mapp
             }
         });
 
+        GlideUrl glideUrl = new GlideUrl(mapping.getUrl() + "/thumbnail", new LazyHeaders.Builder()
+                .addHeader(NetUtil.SERVICE_TOKEN_KEY, NetUtil.getServiceToken())
+                .build());
+
         Glide.with(mContext)
-        .load(mapping.getUrl() + "/thumbnail")
+        .load(glideUrl)
         .apply(new RequestOptions().placeholder(R.drawable.ic_launcher_background).diskCacheStrategy(DiskCacheStrategy.NONE))
         .into(holder.mMap);
     }

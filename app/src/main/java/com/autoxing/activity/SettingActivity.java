@@ -47,6 +47,8 @@ public class SettingActivity extends BaseActivity {
                 SharedPreferences.Editor editor = mChassisSp.edit();
                 editor.putInt("serverIndex", position);
                 editor.commit();
+                String token = GlobalUtil.getToken(position);
+                AXRobotPlatform.getInstance().setServiceToken(token);
                 AXRobotPlatform.getInstance().connect(pais[0], Integer.parseInt(pais[1]));
             }
         });

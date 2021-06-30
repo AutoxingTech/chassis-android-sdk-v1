@@ -30,29 +30,21 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom">
 
-            <TextView
-                android:id="@+id/tv_test_value"
+            <EditText
+                android:id="@+id/et_move_count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="10dp"
-                android:layout_alignParentLeft="true"
-                android:layout_marginBottom="10dp"/>
+                android:layout_alignParentLeft="true"/>
 
-            <TextView
-                android:id="@+id/tv_pos_value"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="10dp"
-                android:layout_alignParentLeft="true"
-                android:layout_below="@+id/tv_test_value"/>
-
-            <TextView
-                android:id="@+id/tv_target_value"
+            <Button
+                android:id="@+id/btn_clear"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="10dp"
                 android:layout_alignParentRight="true"
-                android:layout_below="@+id/tv_test_value"/>
+                android:background="@drawable/btn_selector"
+                android:text="Clear"/>
 
             <Button
                 android:id="@+id/btn_move"
@@ -63,7 +55,7 @@
                 android:layout_alignParentLeft="true"
                 android:background="@drawable/btn_selector"
                 android:layout_marginBottom="10dp"
-                android:layout_below="@+id/tv_pos_value"
+                android:layout_below="@+id/et_move_count"
                 android:text="Move"/>
 
             <com.victor.loading.rotate.RotateLoading
@@ -72,7 +64,7 @@
                 android:layout_height="40dp"
                 app:loading_width="5dp"
                 app:loading_color="#4EEE94"
-                android:layout_below="@+id/tv_target_value"
+                android:layout_below="@+id/et_move_count"
                 android:layout_marginTop="14dp"
                 android:layout_centerHorizontal="true"/>
 

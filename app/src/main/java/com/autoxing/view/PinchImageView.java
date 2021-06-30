@@ -41,7 +41,7 @@ public class PinchImageView extends ImageView  {
     /**
      * 图片最大放大比例
      */
-    private static final float MAX_SCALE = 4f;
+    private static final float MAX_SCALE = 8f;
 
 
     ////////////////////////////////监听器////////////////////////////////
@@ -52,6 +52,8 @@ public class PinchImageView extends ImageView  {
      * @see #setOnClickListener(OnClickListener)
      */
     private OnClickListener mOnClickListener;
+
+    private OnSingleClickListener mOnSingleClickListener;
 
     /**
      * 外界长按事件
@@ -72,6 +74,9 @@ public class PinchImageView extends ImageView  {
         mOnLongClickListener = l;
     }
 
+    public void setOnSingleClickListener(OnSingleClickListener l) {
+        mOnSingleClickListener = l;
+    }
 
     ////////////////////////////////公共状态获取////////////////////////////////
 
@@ -805,6 +810,11 @@ public class PinchImageView extends ImageView  {
             if (mOnClickListener != null) {
                 mOnClickListener.onClick(PinchImageView.this);
             }
+
+            if (mOnSingleClickListener != null) {
+                mOnSingleClickListener.onClick(PinchImageView.this, e);
+            }
+
             return true;
         }
     });

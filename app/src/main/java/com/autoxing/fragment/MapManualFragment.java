@@ -11,25 +11,28 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.autoxing.controller.R;
 import com.autoxing.robot_core.AXRobotPlatform;
 import com.autoxing.robot_core.IMappingListener;
 import com.autoxing.robot_core.bean.ChassisStatus;
+import com.autoxing.robot_core.bean.Location;
 import com.autoxing.robot_core.bean.Map;
 import com.autoxing.robot_core.bean.PoseTopic;
 import com.autoxing.robot_core.bean.TopicBase;
 import com.autoxing.robot_core.geometry.PointF;
 import com.autoxing.robot_core.util.CoordinateUtil;
+import com.autoxing.robot_core.util.NetUtil;
 import com.autoxing.util.DensityUtil;
 import com.autoxing.util.GlobalUtil;
 import com.autoxing.util.RobotUtil;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.model.GlideUrl;
+import com.bumptech.glide.load.model.LazyHeaders;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.transition.Transition;
-
-import java.util.List;
 
 public class MapManualFragment extends Fragment implements IMappingListener {
 
@@ -38,6 +41,7 @@ public class MapManualFragment extends Fragment implements IMappingListener {
 
     private ImageView mMappingImage;
     private ImageView mCurrentPos;
+    private TextView mAngle;
 
     private Point mScreenSize = null;
     private Bitmap mBitmap = null;
@@ -74,10 +78,15 @@ public class MapManualFragment extends Fragment implements IMappingListener {
     private void initView(View view) {
         mMappingImage = view.findViewById(R.id.iv_mapping);
         mCurrentPos = view.findViewById(R.id.iv_current_pos);
+        mAngle = view.findViewById(R.id.tv_angle);
     }
 
     private void initData() {
-        Glide.with(getContext()).asBitmap().load(mMap.getUrl() + ".png").into(new SimpleTarget<Bitmap>() {
+        GlideUrl glideUrl = new GlideUrl(mMap.getUrl() + ".png", new LazyHeaders.Builder()
+                .addHeader(NetUtil.SERVICE_TOKEN_KEY, NetUtil.getServiceToken())
+                .build());
+
+        Glide.with(getContext()).asBitmap().load(glideUrl).into(new SimpleTarget<Bitmap>() {
 
             @Override
             public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
@@ -131,7 +140,8 @@ public class MapManualFragment extends Fragment implements IMappingListener {
 
         if (topic instanceof PoseTopic && mMap != null && mCoordinateUtil != null) {
             PoseTopic poseTopic = (PoseTopic)topic;
-            PointF pt = mCoordinateUtil.worldToScreen(poseTopic.getPose().getLocation());
+            Location location = poseTopic.getPose().getLocation();
+            PointF pt = mCoordinateUtil.worldToScreen(location);
 
             int viewWidth = mMappingImage.getWidth();
             int viewHeight = mMappingImage.getHeight();
@@ -151,6 +161,7 @@ public class MapManualFragment extends Fragment implements IMappingListener {
                     mCurrentPos.setX(screenX);
                     mCurrentPos.setY(screenY);
                     float degree = -(float) Math.toDegrees(poseTopic.getPose().getYaw());
+                    mAngle.setText("x=" + location.getX() + ", y=" + location.getY() + "\nyaw = " + -degree);
                     mCurrentPos.setRotation(degree);
                 }
             });

@@ -18,6 +18,7 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.autoxing.controller.R;
 import com.autoxing.fragment.MapAutoFragment;
+import com.autoxing.fragment.MapCruisingFragment;
 import com.autoxing.fragment.MapManualFragment;
 import com.autoxing.fragment.MapRemoteFragment;
 import com.autoxing.robot_core.AXRobotPlatform;
@@ -37,16 +38,16 @@ import java.util.List;
 
 public class MapDetailActivity extends BaseActivity {
 
-    public static Map selMap = null;
+    public static Map mSelMap = null;
 
-    private String mTitles[] = { "Auto", "Remote", "Manual" };
+    private String mTitles[] = { "Auto", "Manual", "Cruising", "Remote" };
     private ArrayList<CustomTabEntity> mTabEntities = new ArrayList<>();
     private List<Fragment> mTabFragmentList = new ArrayList<>();
 
     private int[] mIconUnselectIds = {
-            R.mipmap.tab_home_unselect, R.mipmap.tab_more_unselect, R.mipmap.tab_contact_unselect };
+            R.mipmap.tab_home_unselect, R.mipmap.tab_more_unselect, R.mipmap.tab_contact_unselect, R.mipmap.tab_speech_unselect };
     private int[] mIconSelectIds = {
-            R.mipmap.tab_home_select, R.mipmap.tab_more_select,R.mipmap.tab_contact_select };
+            R.mipmap.tab_home_select, R.mipmap.tab_more_select, R.mipmap.tab_contact_select, R.mipmap.tab_speech_select };
 
     private View mLayout = null;
     private CommonTabLayout mTabLayout;
@@ -81,9 +82,10 @@ public class MapDetailActivity extends BaseActivity {
         mTabLayout.setTabData(mTabEntities);
         mViewPager.setPagingEnabled(false);
 
-        mTabFragmentList.add(new MapAutoFragment(selMap));
+        mTabFragmentList.add(new MapAutoFragment(mSelMap));
+        mTabFragmentList.add(new MapManualFragment(mSelMap));
+        mTabFragmentList.add(new MapCruisingFragment(mSelMap));
         mTabFragmentList.add(new MapRemoteFragment());
-        mTabFragmentList.add(new MapManualFragment(selMap));
         mViewPager.setAdapter(new FragmentPagerAdapter(getSupportFragmentManager(),
                 FragmentPagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
             @NonNull
@@ -155,7 +157,7 @@ public class MapDetailActivity extends BaseActivity {
 
                     mPlayer.start();
                     if (mTabLayout.getCurrentTab() == 0) {
-                        mViewPager.setCurrentItem(2);
+                        mViewPager.setCurrentItem(1);
                     }
                 }
             }

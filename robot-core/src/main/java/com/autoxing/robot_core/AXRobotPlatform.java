@@ -68,6 +68,10 @@ public class AXRobotPlatform {
         startWebSocket();
     }
 
+    public void setServiceToken(String token) {
+        NetUtil.setServiceToken(token);
+    }
+
     public void addLisener(IMappingListener listener) {
         mListeners.add(listener);
     }
@@ -172,7 +176,9 @@ public class AXRobotPlatform {
 
     private void startWebSocket() {
         URI serverURI = URI.create(NetUtil.getUrl(NetUtil.SERVICE_WS_TOPICS));
-        mWebSocketClient = new WebSocketClient(serverURI) {
+        java.util.Map headers = new HashMap<>();
+        headers.put(NetUtil.SERVICE_TOKEN_KEY, NetUtil.getServiceToken());
+        mWebSocketClient = new WebSocketClient(serverURI, headers) {
             @Override
             public void onOpen(ServerHandshake handshakedata) {
                 String status = handshakedata.getHttpStatusMessage();
@@ -286,41 +292,71 @@ public class AXRobotPlatform {
     }
 
     public List<Mapping> getMappings() {
-        String res = NetUtil.syncReq(NetUtil.getUrl(NetUtil.SERVICE_MAPPINGS));
-        JSONArray jsonArr = JSON.parseArray(res);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_MAPPINGS));
+        if (res == null)
+            return null;
+
+        if (res.code() / 100 != 2)
+            return null;
+
+        JSONArray jsonArr = null;
+        try {
+            jsonArr = JSON.parseArray(res.body().string());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassCastException e) {
+            e.printStackTrace();
+        }
+
+        if (jsonArr == null)
+            return null;
+
         List<Mapping> mappings = new ArrayList<>();
-        if (jsonArr != null) {
-            for (int i = 0; i < jsonArr.size(); i++) {
-                JSONObject jsonObject = jsonArr.getJSONObject(i);
-                String state = jsonObject.getString("state");
-                if (state.equals("finished")) {
-                    Mapping mapping = new Mapping();
-                    mapping.setId(jsonObject.getInteger("id"));
-                    mapping.setStartTime(jsonObject.getLong("start_time"));
-                    mapping.setState(jsonObject.getString("state"));
-                    mapping.setUrl(jsonObject.getString("url"));
-                    mappings.add(mapping);
-                }
+        for (int i = 0; i < jsonArr.size(); i++) {
+            JSONObject jsonObject = jsonArr.getJSONObject(i);
+            String state = jsonObject.getString("state");
+            if (state.equals("finished")) {
+                Mapping mapping = new Mapping();
+                mapping.setId(jsonObject.getInteger("id"));
+                mapping.setStartTime(jsonObject.getLong("start_time"));
+                mapping.setState(jsonObject.getString("state"));
+                mapping.setUrl(jsonObject.getString("url"));
+                mappings.add(mapping);
             }
         }
         return mappings;
     }
 
     public List<Map> getMaps() {
-        String res = NetUtil.syncReq(NetUtil.getUrl(NetUtil.SERVICE_MAPS));
-        JSONArray jsonArr = JSON.parseArray(res);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_MAPS));
+        if (res == null)
+            return null;
+
+        if (res.code() / 100 != 2)
+            return null;
+
+        JSONArray jsonArr = null;
+        try {
+            jsonArr = JSON.parseArray(res.body().string());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassCastException e) {
+            e.printStackTrace();
+        }
+
+        if (jsonArr == null)
+            return null;
+
         List<Map> maps = new ArrayList<>();
-        if (jsonArr != null) {
-            for (int i = 0; i < jsonArr.size(); i++) {
-                JSONObject jsonObject =  jsonArr.getJSONObject(i);
-                Map map= new Map();
-                map.setId(jsonObject.getInteger("id"));
-                map.setUid(jsonObject.getString("uid"));
-                map.setMapName(jsonObject.getString("map_name"));
-                map.setCreateTime(jsonObject.getLong("create_time"));
-                map.setUrl(jsonObject.getString("url"));
-                maps.add(map);
-            }
+        for (int i = 0; i < jsonArr.size(); i++) {
+            JSONObject jsonObject =  jsonArr.getJSONObject(i);
+            Map map= new Map();
+            map.setId(jsonObject.getInteger("id"));
+            map.setUid(jsonObject.getString("uid"));
+            map.setMapName(jsonObject.getString("map_name"));
+            map.setCreateTime(jsonObject.getLong("create_time"));
+            map.setUrl(jsonObject.getString("url"));
+            maps.add(map);
         }
         return maps;
     }
@@ -513,6 +549,9 @@ public class AXRobotPlatform {
     public void deleteMaps(String[] mapUids, boolean exclude) {
         boolean flag = false;
         List<Map> maps = getMaps();
+        if (maps == null)
+            return;
+
         for (Map map : maps) {
             flag = false;
             String uid = map.getUid();

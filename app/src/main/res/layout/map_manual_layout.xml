@@ -14,4 +14,11 @@
         android:layout_height="20dp"
         android:src="@mipmap/robot" />
 
+    <TextView
+        android:id="@+id/tv_angle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="20dp"/>
+
 </FrameLayout>

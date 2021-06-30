@@ -10,9 +10,9 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
@@ -21,21 +21,21 @@ import com.autoxing.controller.R;
 import com.autoxing.robot_core.AXRobotPlatform;
 import com.autoxing.robot_core.IMappingListener;
 import com.autoxing.robot_core.action.ActionStatus;
+import com.autoxing.robot_core.action.MoveAction;
 import com.autoxing.robot_core.bean.ChassisStatus;
 import com.autoxing.robot_core.bean.Location;
 import com.autoxing.robot_core.bean.Map;
-import com.autoxing.robot_core.action.MoveAction;
 import com.autoxing.robot_core.bean.MoveOption;
 import com.autoxing.robot_core.bean.PoseTopic;
 import com.autoxing.robot_core.bean.TopicBase;
 import com.autoxing.robot_core.geometry.PointF;
+import com.autoxing.robot_core.util.CommonCallback;
 import com.autoxing.robot_core.util.CoordinateUtil;
 import com.autoxing.robot_core.util.NetUtil;
+import com.autoxing.robot_core.util.ThreadPoolUtil;
 import com.autoxing.util.DensityUtil;
 import com.autoxing.util.GlobalUtil;
 import com.autoxing.util.RobotUtil;
-import com.autoxing.robot_core.util.CommonCallback;
-import com.autoxing.robot_core.util.ThreadPoolUtil;
 import com.autoxing.view.OnSingleClickListener;
 import com.autoxing.view.PinchImageView;
 import com.bumptech.glide.Glide;
@@ -47,42 +47,47 @@ import com.victor.loading.rotate.RotateLoading;
 
 import org.buraktamturk.loadingview.LoadingView;
 
-import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 
-public class MapAutoFragment extends Fragment implements View.OnClickListener, IMappingListener {
+public class MapCruisingFragment extends Fragment implements View.OnClickListener, IMappingListener {
 
     private Map mMap;
     private View mLayout = null;
 
     private LoadingView mLoadingView;
     private FrameLayout mContainer;
-    private TextView mPosValue;
-    private TextView mTargetValue;
-    private TextView mTestValue;
+    private EditText mMoveCount;
     private PinchImageView mIvMap;
     private ImageView mCurrentPos;
-    private ImageView mAnchor = null;
+    private List<ImageView> mTargetPointViews = new ArrayList<>();
     private Button mBtnMove;
     private Button mBtnCancel;
+    private Button mBtnClear;
     private RotateLoading mRotateLoading;
 
     private float mScale;
     private Matrix mMatrix = null;
 
-    private PointF mTargetViewPoint = new PointF();
+    private List<PointF> mTargetViewPoints = new ArrayList<>();
+    private List<Location> mLocations = new ArrayList<>();
 
-    private Location mLocation = null;
     private Point mScreenSize = null;
     private Bitmap mBitmap = null;
 
     private MoveAction mMoveAction = null;
     private CoordinateUtil mCoordinateUtil = null;
 
-    private DecimalFormat mDf = new DecimalFormat("##0.00");
-
     private float mCurPospRadiusPx;
 
-    public MapAutoFragment(Map map) {
+    private int mCircleIndex = 0;     // start from 1
+
+    private boolean mStopCircle = false;
+    private int mCircleCount = 1000;
+
+    private boolean mRunning = false;
+
+    public MapCruisingFragment(Map map) {
         super();
         mMap = map;
     }
@@ -91,7 +96,7 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         if (mLayout == null) {
-            mLayout = inflater.inflate(R.layout.map_auto_layout, container,false);
+            mLayout = inflater.inflate(R.layout.map_cruising_layout, container,false);
             mScreenSize = GlobalUtil.getScreenSize(getContext());
             if (mMap.isDetailLoaded()) {
                 mCoordinateUtil = new CoordinateUtil();
@@ -117,16 +122,17 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
         mLoadingView = (LoadingView) view.findViewById(R.id.loading_view);
         mContainer = (FrameLayout) view.findViewById(R.id.fl_continer);
         mIvMap = (PinchImageView) view.findViewById(R.id.iv_map);
-        mPosValue = (TextView) view.findViewById(R.id.tv_pos_value);
-        mTargetValue = (TextView) view.findViewById(R.id.tv_target_value);
-        mTestValue = (TextView) view.findViewById(R.id.tv_test_value);
+        mMoveCount = (EditText) view.findViewById(R.id.et_move_count);
         mCurrentPos = (ImageView) view.findViewById(R.id.iv_current_pos);
         mBtnMove = (Button) view.findViewById(R.id.btn_move);
         mBtnCancel = (Button) view.findViewById(R.id.btn_cancel);
+        mBtnClear = (Button) view.findViewById(R.id.btn_clear);
         mRotateLoading = (RotateLoading) view.findViewById(R.id.rotate_loading);
     }
 
     private void initData() {
+        mMoveCount.setText("" + mCircleCount);
+
         GlideUrl glideUrl = new GlideUrl(mMap.getUrl() + ".png", new LazyHeaders.Builder()
                 .addHeader(NetUtil.SERVICE_TOKEN_KEY, NetUtil.getServiceToken())
                 .build());
@@ -143,19 +149,6 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                 int imageViewHeight = (int)(mScreenSize.x * bitmapScale);
                 mScale = imageViewHeight / mapHeight;
 
-                /*StringBuilder sb = new StringBuilder();
-                sb.append("" + mDf.format(mapWidth));
-                sb.append(", " + mDf.format(mapHeight));
-                sb.append("\n");
-
-                sb.append(mDf.format(mScreenSize.x));
-                sb.append(", " + mDf.format(imageViewHeight));
-                sb.append("\n");
-
-                sb.append("" + mDf.format(mScale));
-
-                mTestValue.setText(sb.toString());*/
-
                 FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) mIvMap.getLayoutParams();
                 params.width = mScreenSize.x;
                 params.height = imageViewHeight;
@@ -169,6 +162,7 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
     private void setListener() {
         mBtnMove.setOnClickListener(this);
         mBtnCancel.setOnClickListener(this);
+        mBtnClear.setOnClickListener(this);
 
         mIvMap.setOnSingleClickListener(new OnSingleClickListener() {
             @Override
@@ -180,12 +174,8 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                     float viewX = mIvMap.getX();
                     float viewY = mIvMap.getY();
 
-                    /*int viewWidth = mIvMap.getWidth();
-                    int viewHeight = mIvMap.getHeight();*/
                     int bitmapWidth = mBitmap.getWidth();
                     int bitmapHeight = mBitmap.getHeight();
-                    /*float scaleX = (float)bitmapWidth / viewWidth;
-                    float scaleY = (float)bitmapHeight / viewHeight;*/
 
                     //  view 坐标
                     float imageX = x - viewX;
@@ -208,43 +198,31 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                     }
 
                     // 像素坐标转世界坐标
-                    mLocation = mCoordinateUtil.screenToWorld(moveX,bitmapHeight - moveY);
+                    Location location = mCoordinateUtil.screenToWorld(moveX,bitmapHeight - moveY);
+                    mLocations.add(location);
 
-                    {
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("" + mDf.format(moveX));
-                        sb.append(", " + mDf.format(bitmapHeight - moveY));
-                        sb.append("\n");
-
-                        sb.append(mDf.format(mLocation.getX()));
-                        sb.append(", " + mDf.format(mLocation.getY()));
-
-                        mTargetValue.setText(sb.toString());
-                    }
-
-                    mTargetViewPoint.setX(moveX);
-                    mTargetViewPoint.setY(moveY);
+                    PointF targetViewPoint = new PointF();
+                    targetViewPoint.setX(moveX);
+                    targetViewPoint.setY(moveY);
+                    mTargetViewPoints.add(targetViewPoint);
 
                     imageX -= mCurPospRadiusPx;
                     imageY -= mCurPospRadiusPx;
 
-                    if (mAnchor != null) {
-                        mAnchor.setX(imageX);
-                        mAnchor.setY(imageY);
-                    } else {
-                        mAnchor = new ImageView(getContext());
-                        mAnchor.setImageDrawable(getResources().getDrawable((R.drawable.anchor)));
-                        mContainer.addView(mAnchor);
+                    ImageView anchor = new ImageView(getContext());
+                    anchor.setImageDrawable(getResources().getDrawable((R.drawable.anchor)));
+                    mContainer.addView(anchor);
 
-                        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) mAnchor.getLayoutParams();
-                        params.width = (int) mCurPospRadiusPx * 2;
-                        params.height = (int) mCurPospRadiusPx * 2;
-                        mAnchor.setLayoutParams(params);
-                        mAnchor.setScaleType(ImageView.ScaleType.FIT_XY);
+                    FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) anchor.getLayoutParams();
+                    params.width = (int) mCurPospRadiusPx * 2;
+                    params.height = (int) mCurPospRadiusPx * 2;
+                    anchor.setLayoutParams(params);
+                    anchor.setScaleType(ImageView.ScaleType.FIT_XY);
 
-                        mAnchor.setX(imageX);
-                        mAnchor.setY(imageY);
-                    }
+                    anchor.setX(imageX);
+                    anchor.setY(imageY);
+
+                    mTargetPointViews.add(anchor);
                 }
             }
         });
@@ -257,10 +235,13 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                 mScale = scale;
                 mMatrix = outerMatrix;
 
-                if (mAnchor != null) {
+                for (int i = 0; i < mTargetPointViews.size(); ++i) {
+                    ImageView anchor = mTargetPointViews.get(i);
+
+                    PointF targetViewPoint = mTargetViewPoints.get(i);
                     // 获取像素坐标
-                    float imageX = mTargetViewPoint.getX();
-                    float imageY = mTargetViewPoint.getY();
+                    float imageX = targetViewPoint.getX();
+                    float imageY = targetViewPoint.getY();
 
                     // 像素坐标转 view 坐标
                     float[] src = { imageX, imageY };
@@ -269,29 +250,9 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                     float viewX = dest[0];
                     float viewY = dest[1];
 
-                    mAnchor.setX(viewX - mCurPospRadiusPx);
-                    mAnchor.setY(viewY - mCurPospRadiusPx);
+                    anchor.setX(viewX - mCurPospRadiusPx);
+                    anchor.setY(viewY - mCurPospRadiusPx);
                 }
-
-                /*
-                int viewWidth = mBitmap.getWidth();
-                int viewHeight = mBitmap.getHeight();
-
-                int width1 = (int)(viewWidth * scale);
-                int height1 = (int)(viewHeight * scale);
-
-                StringBuilder sb = new StringBuilder();
-                sb.append("" + mDf.format(viewWidth));
-                sb.append(", " + mDf.format(viewHeight));
-                sb.append("\n");
-
-                sb.append(mDf.format(width1));
-                sb.append(", " + mDf.format(height1));
-                sb.append("\n");
-
-                sb.append("" + mDf.format(mScale));
-
-                mTestValue.setText(sb.toString());*/
             }
         });
     }
@@ -361,20 +322,6 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                     // 逆时针转顺时针
                     float degree = -(float) Math.toDegrees(poseTopic.getPose().getYaw());
                     mCurrentPos.setRotation(degree);
-
-                    {
-                        StringBuilder sb = new StringBuilder();
-
-                        sb.append("" + mDf.format(pt.getX()));
-                        sb.append(", " + mDf.format(bitmapHeight - pt.getY()));
-                        sb.append("\n");
-
-                        sb.append(mDf.format(location.getX()));
-                        sb.append(", " + mDf.format(location.getY()));
-                        sb.append(", " + mDf.format(-degree));
-
-                        mPosValue.setText(sb.toString());
-                    }
                 }
             });
         }
@@ -406,8 +353,31 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
             case R.id.btn_cancel:
                 cancel();
                 break;
+            case R.id.btn_clear:
+                clear();
+                break;
             default:break;
         }
+    }
+
+    private void reset() {
+        mCircleIndex = 0;
+        mCircleCount = 1000;
+        mMoveCount.setText("" + mCircleCount);
+        mStopCircle = false;
+    }
+
+    private void clear() {
+        for (ImageView targetView : mTargetPointViews) {
+            ViewGroup parent = (ViewGroup)targetView.getParent();
+            parent.removeView(targetView);
+        }
+        mTargetPointViews.clear();
+        mTargetViewPoints.clear();
+        mLocations.clear();
+
+        if (mRunning)
+            mStopCircle = true;
     }
 
     private void cancel() {
@@ -429,6 +399,8 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                         if (succ) {
                             content = "action status is canceled";
                             mMoveAction = null;
+
+                            mStopCircle = true;
                         }
                         Toast.makeText(getContext(), content, Toast.LENGTH_SHORT).show();
                         mLoadingView.setLoading(false);
@@ -439,52 +411,84 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
     }
 
     private void move() {
-        if (mLocation == null) {
+        if (mLocations.isEmpty()) {
             Toast.makeText(getContext(),"please set dest position firstly!", Toast.LENGTH_SHORT).show();
         }
 
-        mLoadingView.setLoading(true);
+        //mLoadingView.setLoading(true);
         ThreadPoolUtil.runAsync(new CommonCallback() {
             @Override
             public void run() {
-                mMoveAction = AXRobotPlatform.getInstance().moveTo(mLocation, new MoveOption(), .0f);
-                if (mMoveAction != null) {
-                    if (mMoveAction.getStatus() == ActionStatus.MOVING) {
-                        getActivity().runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mRotateLoading.start();
-                                mLoadingView.setLoading(false);
-                            }
-                        });
 
-                        ActionStatus status = mMoveAction.waitUntilDone();
-                        getActivity().runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mRotateLoading.stop();
-                                Toast.makeText(getContext(), "robot status is " + status.toString(), Toast.LENGTH_SHORT).show();
-                            }
-                        });
+                mRunning = true;
+                for (;;) {
 
-                    } else {
-                        ActionStatus status = mMoveAction.getStatus();
-                        getActivity().runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(getContext(), "robot status is " + status.toString(), Toast.LENGTH_SHORT).show();
-                                mLoadingView.setLoading(false);
-                            }
-                        });
-                    }
-                } else {
+                    mCircleIndex++;
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(getContext(), "failed to move to dest!", Toast.LENGTH_SHORT).show();
-                            mLoadingView.setLoading(false);
+                            mMoveCount.setText("" + (mCircleCount - mCircleIndex));
                         }
                     });
+
+                    for (Location location : mLocations) {
+                        if (mStopCircle)
+                            break;
+
+                        mMoveAction = AXRobotPlatform.getInstance().moveTo(location, new MoveOption(), .0f);
+
+                        if (mMoveAction != null) {
+                            if (mMoveAction.getStatus() == ActionStatus.MOVING) {
+                                getActivity().runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mRotateLoading.start();
+                                        //mLoadingView.setLoading(false);
+                                    }
+                                });
+
+                                ActionStatus status = mMoveAction.waitUntilDone();
+                                getActivity().runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mRotateLoading.stop();
+                                        Toast.makeText(getContext(), "robot status is " + status.toString(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+
+                            } else {
+                                ActionStatus status = mMoveAction.getStatus();
+                                getActivity().runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(getContext(), "robot status is " + status.toString(), Toast.LENGTH_SHORT).show();
+                                        //mLoadingView.setLoading(false);
+                                    }
+                                });
+                            }
+                        } else {
+                            getActivity().runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(getContext(), "failed to move to dest!", Toast.LENGTH_SHORT).show();
+                                    //mLoadingView.setLoading(false);
+                                }
+                            });
+                        }
+                    }
+
+                    if (mStopCircle || mCircleIndex == mCircleCount)
+                    {
+                        getActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mRunning = false;
+                                reset();
+                            }
+                        });
+
+                        break;
+                    }
                 }
             }
         });

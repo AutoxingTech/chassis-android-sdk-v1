@@ -112,21 +112,32 @@ public class MapListFragment extends Fragment implements IMapAdapterListener {
         ThreadPoolUtil.runAsync(new CommonCallback() {
             @Override
             public void run() {
-                boolean succ = AXRobotPlatform.getInstance().setCurrentMap(map.getUid(), new Pose());
+                int retCode = 0;
+                boolean succ = map.loadDetail();
+                if (succ) {
+                    succ = AXRobotPlatform.getInstance().setCurrentMap(map.getUid(), new Pose());
+                    if (!succ) {
+                        retCode = 2;
+                    }
+                } else {
+                    retCode = 1;
+                }
 
+                int finalRetCode = retCode;
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if (succ) {
+                        if (finalRetCode == 0) {
                             Intent intent = new Intent();
                             intent.putExtra("url", map.getUrl());
                             intent.putExtra("id",map.getId());
                             intent.setClass(getActivity(), MapDetailActivity.class);
-                            MapDetailActivity.selMap = map;
+                            MapDetailActivity.mSelMap = map;
                             startActivity(intent);
                         } else {
                             StringBuilder sb = new StringBuilder();
-                            sb.append("failed to set map");
+                            sb.append("failed to ");
+                            sb.append(finalRetCode == 2 ? "set map " : "get map detail, map id is ");
                             sb.append(map.getId());
                             Toast.makeText(getContext(), sb.toString(), Toast.LENGTH_SHORT).show();
                         }
