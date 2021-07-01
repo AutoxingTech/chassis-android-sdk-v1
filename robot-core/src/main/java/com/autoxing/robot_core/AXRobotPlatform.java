@@ -542,6 +542,7 @@ public class AXRobotPlatform {
         HashMap hashMap = new HashMap();
         hashMap.put("position", list);
         hashMap.put("ori", pose.getYaw());
+        System.out.println("===robot-core===============pos.x=" + pose.getX() + ", pos.y=" + pose.getY() + ", pos.z=" + pose.getZ() + ", ori=" + pose.getYaw());
         Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_POSE), hashMap, NetUtil.HTTP_METHOD.post);
 
         if (res == null)
@@ -563,8 +564,13 @@ public class AXRobotPlatform {
         hashMap.put("target_x",location.getX());
         hashMap.put("target_y",location.getY());
         hashMap.put("target_z",location.getZ());
-        if (option.isWithYaw())
+        System.out.println("===robot-core===============x=" + location.getX() + ", y=" + location.getY() + ", z=" + location.getZ());
+        if (option.isWithYaw()) {
+            System.out.println("===robot-core===============yaw=" + yaw);
             hashMap.put("target_ori", yaw);
+        } else {
+            System.out.println("===robot-core===============not use yaw");
+        }
         Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES), hashMap, NetUtil.HTTP_METHOD.post);
         if (res == null)
             return null;
