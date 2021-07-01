@@ -569,7 +569,7 @@ public class AXRobotPlatform {
         if (res == null)
             return null;
 
-        if (res.code() != 201)
+        if (res.code() / 100 != 2)
             return null;
 
         JSONObject jsonObject = null;
@@ -643,7 +643,7 @@ public class AXRobotPlatform {
     }
 
     public MoveAction getCurrentAction() {
-        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_REMOTE_ACTION) + "/latest", NetUtil.HTTP_METHOD.post);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES) + "/latest", NetUtil.HTTP_METHOD.get);
         if (res == null)
             return null;
 
