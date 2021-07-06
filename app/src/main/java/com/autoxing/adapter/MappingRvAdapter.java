@@ -69,7 +69,7 @@ public class MappingRvAdapter extends RecyclerView.Adapter<MappingRvAdapter.Mapp
         });
 
         GlideUrl glideUrl = new GlideUrl(mapping.getUrl() + "/thumbnail", new LazyHeaders.Builder()
-                .addHeader(NetUtil.SERVICE_TOKEN_KEY, NetUtil.getServiceToken())
+                .addHeader(NetUtil.getServiceTokenKey(), NetUtil.getServiceTokenValue())
                 .build());
 
         Glide.with(mContext)

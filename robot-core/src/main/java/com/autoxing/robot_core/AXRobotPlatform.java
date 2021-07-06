@@ -56,20 +56,23 @@ public class AXRobotPlatform {
 
     private Pose mPose = null;
 
-    public void connect(String ip, int port) {
+    public void connect(String ip, int port, String token) {
         if (ip != null && port != -1) {
             String urlBase = String.format("http://%s:%d", ip, port);
             NetUtil.setUrlBase(urlBase);
         }
 
+        if (token.startsWith("Token")) {
+            NetUtil.setServiceTokenKey("Authorization");
+        } else {
+            NetUtil.setServiceTokenKey("SECRET");
+        }
+        NetUtil.setServiceTokenValue(token);
+
         if (mWebSocketClient != null) {
             mWebSocketClient.close(10000);
         }
         startWebSocket();
-    }
-
-    public void setServiceToken(String token) {
-        NetUtil.setServiceToken(token);
     }
 
     public void addLisener(IMappingListener listener) {
@@ -177,7 +180,7 @@ public class AXRobotPlatform {
     private void startWebSocket() {
         URI serverURI = URI.create(NetUtil.getUrl(NetUtil.SERVICE_WS_TOPICS));
         java.util.Map headers = new HashMap<>();
-        headers.put(NetUtil.SERVICE_TOKEN_KEY, NetUtil.getServiceToken());
+        headers.put(NetUtil.getServiceTokenKey(), NetUtil.getServiceTokenValue());
         mWebSocketClient = new WebSocketClient(serverURI, headers) {
             @Override
             public void onOpen(ServerHandshake handshakedata) {

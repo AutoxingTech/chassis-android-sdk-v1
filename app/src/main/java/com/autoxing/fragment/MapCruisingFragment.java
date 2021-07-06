@@ -75,7 +75,6 @@ public class MapCruisingFragment extends Fragment implements View.OnClickListene
     private Point mScreenSize = null;
     private Bitmap mBitmap = null;
 
-    private MoveAction mMoveAction = null;
     private CoordinateUtil mCoordinateUtil = null;
 
     private float mCurPospRadiusPx;
@@ -134,7 +133,7 @@ public class MapCruisingFragment extends Fragment implements View.OnClickListene
         mMoveCount.setText("" + mCircleCount);
 
         GlideUrl glideUrl = new GlideUrl(mMap.getUrl() + ".png", new LazyHeaders.Builder()
-                .addHeader(NetUtil.SERVICE_TOKEN_KEY, NetUtil.getServiceToken())
+                .addHeader(NetUtil.getServiceTokenKey(), NetUtil.getServiceTokenValue())
                 .build());
 
         Glide.with(getContext()).asBitmap().load(glideUrl).into(new SimpleTarget<Bitmap>() {
@@ -332,9 +331,8 @@ public class MapCruisingFragment extends Fragment implements View.OnClickListene
         e.printStackTrace();
 
         Activity activity = getActivity();
-        if (activity == null) {
+        if (activity == null)
             return;
-        }
 
         activity.runOnUiThread(new Runnable() {
             @Override
@@ -381,31 +379,27 @@ public class MapCruisingFragment extends Fragment implements View.OnClickListene
     }
 
     private void cancel() {
-        if (mMoveAction == null) {
-            Toast.makeText(getContext(),"no move action!", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (mRunning)
+            mStopCircle = true;
 
-        mLoadingView.setLoading(true);
         ThreadPoolUtil.runAsync(new CommonCallback() {
+
             @Override
             public void run() {
-                boolean succ = mMoveAction.cancel();
+                MoveAction moveAction = AXRobotPlatform.getInstance().getCurrentAction();
+                if (moveAction != null) {
+                    boolean succ = moveAction.cancel();
+                    getActivity().runOnUiThread(new Runnable() {
 
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        String content = "failed to cancel current action!";
-                        if (succ) {
-                            content = "action status is canceled";
-                            mMoveAction = null;
-
-                            mStopCircle = true;
+                        @Override
+                        public void run() {
+                            String content = "failed to cancel current action!";
+                            if (succ)
+                                content = "action status is canceled";
+                            Toast.makeText(getContext(), content, Toast.LENGTH_SHORT).show();
                         }
-                        Toast.makeText(getContext(), content, Toast.LENGTH_SHORT).show();
-                        mLoadingView.setLoading(false);
-                    }
-                });
+                    });
+                }
             }
         });
     }
@@ -435,10 +429,10 @@ public class MapCruisingFragment extends Fragment implements View.OnClickListene
                         if (mStopCircle)
                             break;
 
-                        mMoveAction = AXRobotPlatform.getInstance().moveTo(location, new MoveOption(), .0f);
+                        MoveAction moveAction = AXRobotPlatform.getInstance().moveTo(location, new MoveOption(), .0f);
 
-                        if (mMoveAction != null) {
-                            if (mMoveAction.getStatus() == ActionStatus.MOVING) {
+                        if (moveAction != null) {
+                            if (moveAction.getStatus() == ActionStatus.MOVING) {
                                 getActivity().runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
@@ -447,21 +441,21 @@ public class MapCruisingFragment extends Fragment implements View.OnClickListene
                                     }
                                 });
 
-                                ActionStatus status = mMoveAction.waitUntilDone();
+                                ActionStatus status = moveAction.waitUntilDone();
                                 getActivity().runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
                                         mRotateLoading.stop();
-                                        Toast.makeText(getContext(), "robot status is " + status.toString(), Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getContext(), "2robot status is " + status.toString(), Toast.LENGTH_SHORT).show();
                                     }
                                 });
 
                             } else {
-                                ActionStatus status = mMoveAction.getStatus();
+                                ActionStatus status = moveAction.getStatus();
                                 getActivity().runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        Toast.makeText(getContext(), "robot status is " + status.toString(), Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getContext(), "1robot status is " + status.toString(), Toast.LENGTH_SHORT).show();
                                         //mLoadingView.setLoading(false);
                                     }
                                 });
@@ -479,10 +473,11 @@ public class MapCruisingFragment extends Fragment implements View.OnClickListene
 
                     if (mStopCircle || mCircleIndex == mCircleCount)
                     {
+                        mRunning = false;
+
                         getActivity().runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                mRunning = false;
                                 reset();
                             }
                         });

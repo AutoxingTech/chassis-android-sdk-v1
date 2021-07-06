@@ -83,7 +83,7 @@ public class MapManualFragment extends Fragment implements IMappingListener {
 
     private void initData() {
         GlideUrl glideUrl = new GlideUrl(mMap.getUrl() + ".png", new LazyHeaders.Builder()
-                .addHeader(NetUtil.SERVICE_TOKEN_KEY, NetUtil.getServiceToken())
+                .addHeader(NetUtil.getServiceTokenKey(), NetUtil.getServiceTokenValue())
                 .build());
 
         Glide.with(getContext()).asBitmap().load(glideUrl).into(new SimpleTarget<Bitmap>() {

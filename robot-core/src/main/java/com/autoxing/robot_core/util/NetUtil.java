@@ -34,9 +34,10 @@ public class NetUtil {
     public static final String SERVICE_CHASSIS_REMOTE_TWIST = "/chassis/remote/twist";
     public static final String SERVICE_WS_TOPICS = "/ws/topics";
 
-    public static final String SERVICE_TOKEN_KEY = "Authorization";
+    //public static final String SERVICE_TOKEN_KEY = "Authorization";
     //public static final String SERVICE_TOKEN_VALUE = "Token 8a3c5e000d75fa6322abe5fe23af778c0a95a860";
-    private static String serviceToken = "8a3c5e000d75fa6322abe5fe23af778c0a95a860";
+    private static String serviceTokenKey = "";
+    private static String serviceTokenValue = "";
 
     private static OkHttpClient okHttpClient = new OkHttpClient.Builder()
             .connectTimeout(20, TimeUnit.SECONDS) //连接超时
@@ -47,12 +48,20 @@ public class NetUtil {
         NetUtil.baseUrl = url;
     }
 
-    public static void setServiceToken(String token){
-        serviceToken = token;
+    public static void setServiceTokenValue(String tokenValue){
+        serviceTokenValue = tokenValue;
     }
 
-    public static String getServiceToken(){
-        return "Token " + serviceToken;
+    public static String getServiceTokenValue(){
+        return serviceTokenValue;
+    }
+
+    public static void setServiceTokenKey(String tokenKey){
+        serviceTokenKey = tokenKey;
+    }
+
+    public static String getServiceTokenKey(){
+        return serviceTokenKey;
     }
 
     public static String getUrl(String serviceName) {
@@ -190,7 +199,7 @@ public class NetUtil {
 
     private static Response syncReq3Imple(String url, String content, HTTP_METHOD httpMethod) {
         Request request = null;
-        Request.Builder builder = new Request.Builder().url(url).addHeader(SERVICE_TOKEN_KEY, getServiceToken());
+        Request.Builder builder = new Request.Builder().url(url).addHeader(getServiceTokenKey(), getServiceTokenValue());
 
         if (content == null) {
             if (httpMethod == HTTP_METHOD.post) {

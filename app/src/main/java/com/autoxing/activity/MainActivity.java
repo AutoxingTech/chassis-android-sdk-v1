@@ -54,9 +54,9 @@ public class MainActivity extends BaseActivity {
         String server = GlobalUtil.serverDataset.get(serverIndex);
         String[] pairs = server.split(":");
 
-        String token = GlobalUtil.getToken(serverIndex);
-        AXRobotPlatform.getInstance().setServiceToken(token);
-        AXRobotPlatform.getInstance().connect(pairs[0], Integer.parseInt(pairs[1]));
+        // String token = "Token " + GlobalUtil.getToken(serverIndex);
+        String token = "dRw6JGyzFFwKNfFPQ8FFF";
+        AXRobotPlatform.getInstance().connect(pairs[0], Integer.parseInt(pairs[1]), token);
         AXRobotPlatform.getInstance().enableBlockThread(false);
 
         initView();
