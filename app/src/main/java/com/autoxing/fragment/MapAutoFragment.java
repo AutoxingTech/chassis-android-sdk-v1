@@ -39,15 +39,20 @@ import com.autoxing.robot_core.util.ThreadPoolUtil;
 import com.autoxing.view.OnSingleClickListener;
 import com.autoxing.view.PinchImageView;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.model.GlideUrl;
 import com.bumptech.glide.load.model.LazyHeaders;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.transition.Transition;
+import com.bumptech.glide.signature.ObjectKey;
 import com.victor.loading.rotate.RotateLoading;
 
 import org.buraktamturk.loadingview.LoadingView;
 
 import java.text.DecimalFormat;
+import java.util.UUID;
+
+import static com.bumptech.glide.request.RequestOptions.signatureOf;
 
 public class MapAutoFragment extends Fragment implements View.OnClickListener, IMappingListener {
 
@@ -131,7 +136,8 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                 .addHeader(NetUtil.getServiceTokenKey(), NetUtil.getServiceTokenValue())
                 .build());
 
-        Glide.with(getContext()).asBitmap().load(glideUrl).into(new SimpleTarget<Bitmap>() {
+        Glide.with(getContext()).asBitmap().load(glideUrl).apply(signatureOf(new ObjectKey(UUID.randomUUID().toString()))
+                .diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true)).into(new SimpleTarget<Bitmap>() {
 
             @Override
             public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {

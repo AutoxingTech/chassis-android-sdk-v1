@@ -29,10 +29,16 @@ import com.autoxing.util.DensityUtil;
 import com.autoxing.util.GlobalUtil;
 import com.autoxing.util.RobotUtil;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.model.GlideUrl;
 import com.bumptech.glide.load.model.LazyHeaders;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.transition.Transition;
+import com.bumptech.glide.signature.ObjectKey;
+
+import java.util.UUID;
+
+import static com.bumptech.glide.request.RequestOptions.signatureOf;
 
 public class MapManualFragment extends Fragment implements IMappingListener {
 
@@ -86,7 +92,8 @@ public class MapManualFragment extends Fragment implements IMappingListener {
                 .addHeader(NetUtil.getServiceTokenKey(), NetUtil.getServiceTokenValue())
                 .build());
 
-        Glide.with(getContext()).asBitmap().load(glideUrl).into(new SimpleTarget<Bitmap>() {
+        Glide.with(getContext()).asBitmap().load(glideUrl).apply(signatureOf(new ObjectKey(UUID.randomUUID().toString()))
+                .diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true)).into(new SimpleTarget<Bitmap>() {
 
             @Override
             public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
