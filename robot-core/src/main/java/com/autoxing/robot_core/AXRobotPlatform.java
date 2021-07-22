@@ -184,6 +184,9 @@ public class AXRobotPlatform {
         mWebSocketClient = new WebSocketClient(serverURI, headers) {
             @Override
             public void onOpen(ServerHandshake handshakedata) {
+                mWebSocketClient.send("{\"enable_topic\": \"/tracked_pose\"}");
+                mWebSocketClient.send("{\"enable_topic\": \"/map\"}");
+
                 String status = handshakedata.getHttpStatusMessage();
                 System.out.println("===robot-core=============== web socket connect success, status is " + status);
                 notifyConnected(status);

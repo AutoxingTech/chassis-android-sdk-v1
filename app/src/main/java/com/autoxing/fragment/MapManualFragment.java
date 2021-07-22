@@ -145,7 +145,7 @@ public class MapManualFragment extends Fragment implements IMappingListener {
         if (activity == null)
             return;
 
-        if (topic instanceof PoseTopic && mMap != null && mCoordinateUtil != null) {
+        if (topic instanceof PoseTopic && mBitmap != null && mCoordinateUtil != null) {
             PoseTopic poseTopic = (PoseTopic)topic;
             Location location = poseTopic.getPose().getLocation();
             PointF pt = mCoordinateUtil.worldToScreen(location);
