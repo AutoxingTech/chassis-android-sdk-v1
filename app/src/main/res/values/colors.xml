@@ -3,4 +3,25 @@
     <color name="colorPrimary">#6200EE</color>
     <color name="colorPrimaryDark">#3700B3</color>
     <color name="colorAccent">#03DAC5</color>
+
+    <color name="tabMedium">#2B2B2B</color>
+    <color name="tabDark">#000000</color>
+    <color name="tabTransparent">#10ffffff</color>
+
+    <color name="theme_color_primary">#1c9359</color>
+    <color name="theme_color_primary_light">#3aaf75</color>
+    <color name="theme_color_accent">#084e43</color>
+
+    <color name="tab_border">#a7a7aa</color>
+    <color name="tab_background">#f6f6f7</color>
+
+    <color name="btn_normal">#EEE9E9</color>
+    <color name="btn_pressed">#aaaaaa</color>
+
+    <color name="bar_color">#EEE9E9</color>
+    <color name="content_background">#ffffff</color>
+
+    <color name="refresh_start">#EEE9E9</color>
+    <color name="refresh_min">#cccccc</color>
+    <color name="refresh_end">#aaaaaa</color>
 </resources>

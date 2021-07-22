@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<org.buraktamturk.loadingview.LoadingView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/loading_view"
+    app:lv_title="calculating"
+    app:lv_loading="false"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent">
+
+    <FrameLayout
+        android:id="@+id/fl_continer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.autoxing.view.PinchImageView
+            android:id="@+id/iv_map"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@color/content_background"/>
+
+        <ImageView
+            android:id="@+id/iv_current_pos"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@mipmap/robot"
+            android:clickable="false"/>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom">
+
+            <EditText
+                android:id="@+id/et_move_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:layout_alignParentLeft="true"/>
+
+            <Button
+                android:id="@+id/btn_clear"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="10dp"
+                android:layout_alignParentRight="true"
+                android:background="@drawable/btn_selector"
+                android:text="Clear"/>
+
+            <Button
+                android:id="@+id/btn_move"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="10dp"
+                android:layout_alignParentLeft="true"
+                android:background="@drawable/btn_selector"
+                android:layout_marginBottom="10dp"
+                android:layout_below="@+id/et_move_count"
+                android:text="Move"/>
+
+            <com.victor.loading.rotate.RotateLoading
+                android:id="@+id/rotate_loading"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                app:loading_width="5dp"
+                app:loading_color="#4EEE94"
+                android:layout_below="@+id/et_move_count"
+                android:layout_marginTop="14dp"
+                android:layout_centerHorizontal="true"/>
+
+            <Button
+                android:id="@+id/btn_cancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="10dp"
+                android:layout_alignParentRight="true"
+                android:layout_alignBaseline="@id/btn_move"
+                android:background="@drawable/btn_selector"
+                android:layout_marginBottom="10dp"
+                android:text="Cancel"/>
+
+        </RelativeLayout>
+
+    </FrameLayout>
+</org.buraktamturk.loadingview.LoadingView>

@@ -1,2 +1,3 @@
 rootProject.name='Controller'
 include ':app'
+include ':robot-core'

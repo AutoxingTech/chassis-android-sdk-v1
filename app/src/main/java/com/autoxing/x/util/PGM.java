@@ -76,11 +76,10 @@ public class PGM
                 c = (char)in.readByte();
             }while(c >= '0' && c <= '9');
             maxpix = k;
+        } catch(IOException e1) {
+            System.out.println("Exception!");
         }
-        catch(IOException e1){System.out.println("Exception!");}
     }
-
-
 
     /***************************************************************
      * 读入.pgm或.ppm文件
@@ -93,25 +92,28 @@ public class PGM
         {
             if(type == 5)
             {
-                //读入图像灰度数据, 并生成图像序列
-                for(int i = 0; i < iw*ih; i++)
+                // 读入图像灰度数据, 并生成图像序列
+                for(int i = 0; i < iw * ih; i++)
                 {
                     int b = in.readByte();
-                    if(b < 0) b = b + 256;
-                    pixels[i] = (255<<24)|(b<<16)|(b<<8)|b;
+                    if (b < 0)
+                        b = b + 256;
+                    pixels[i] = (255<<24) | (b<<16) | (b<<8) | b;
                 }
-            }
-            else if(type == 6)
+            } else if(type == 6)
             {
                 for(int i = 0; i < iw*ih; i++)
                 {
                     int r = in.readByte();
-                    if(r < 0) r = r + 256;
+                    if (r < 0)
+                        r = r + 256;
                     int g = in.readByte();
-                    if(g < 0) g = g + 256;
+                    if (g < 0)
+                        g = g + 256;
                     int b = in.readByte();
-                    if(b < 0) b = b + 256;
-                    pixels[i] = (255<<24)|(r<<16)|(g<<8)|b;
+                    if (b < 0)
+                        b = b + 256;
+                    pixels[i] = (255<<24) | (r<<16) | (g<<8) | b;
                 }
             }
         }
