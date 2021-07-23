@@ -19,9 +19,11 @@ import com.autoxing.robot_core.bean.Rotation;
 import com.autoxing.robot_core.bean.TopicBase;
 import com.autoxing.robot_core.util.CommonCallback;
 import com.autoxing.robot_core.util.NetUtil;
+import com.autoxing.robot_core.util.ReconnectingWebSocketClient;
 import com.autoxing.robot_core.util.ThreadPoolUtil;
 
 import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.enums.ReadyState;
 import org.java_websocket.handshake.ServerHandshake;
 
@@ -49,7 +51,7 @@ public class AXRobotPlatform {
     private final int MESSAGE_CLOSE = 1;
     private final int MESSAGE_ERROR = 2;
 
-    private WebSocketClient mWebSocketClient = null;
+    private ReconnectingWebSocketClient mWebSocketClient = null;
     private List<IMappingListener> mListeners = new ArrayList<>();
 
     private List<TopicBase> mOccupancyGrids = new ArrayList<>();
@@ -70,7 +72,8 @@ public class AXRobotPlatform {
         NetUtil.setServiceTokenValue(token);
 
         if (mWebSocketClient != null) {
-            mWebSocketClient.close(10000);
+            mWebSocketClient.enableForcedClose(true);
+            mWebSocketClient.close();
         }
         startWebSocket();
     }
@@ -106,33 +109,6 @@ public class AXRobotPlatform {
     private void notifyError(Exception e) {
         for (int i = 0; i < mListeners.size(); ++i) {
             mListeners.get(i).onError(e);
-        }
-    }
-
-    private void websocketAutoConnect() {
-        if (mWebSocketClient != null && !mWebSocketClient.isOpen()) {
-            ReadyState readyState = mWebSocketClient.getReadyState();
-            if (readyState.equals(ReadyState.NOT_YET_CONNECTED)) {
-                System.out.println("===robot-core=============== web socket not yet connected");
-                try {
-                    mWebSocketClient.connect();
-                } catch (IllegalStateException e) {
-                    e.printStackTrace();
-                    System.out.println("===robot-core=============== web socket auto connecte error");
-                }
-            } else if (readyState.equals(ReadyState.CLOSED) || readyState.equals(ReadyState.CLOSING)) {
-                System.out.println("===robot-core=============== web socket is closing or closed");
-                ThreadPoolUtil.runAsync(new CommonCallback() {
-                    @Override
-                    public void run() {
-                        mWebSocketClient.reconnect();
-                    }
-                });
-            } else {
-                System.out.println("===robot-core=============== web socket status unknown");
-            }
-        } else {
-            System.out.println("===robot-core=============== web socket is null or not open");
         }
     }
 
@@ -181,45 +157,33 @@ public class AXRobotPlatform {
         URI serverURI = URI.create(NetUtil.getUrl(NetUtil.SERVICE_WS_TOPICS));
         java.util.Map headers = new HashMap<>();
         headers.put(NetUtil.getServiceTokenKey(), NetUtil.getServiceTokenValue());
-        mWebSocketClient = new WebSocketClient(serverURI, headers) {
+        mWebSocketClient = new ReconnectingWebSocketClient(serverURI, new Draft_6455(), headers, 0) {
+
             @Override
-            public void onOpen(ServerHandshake handshakedata) {
+            public void open(ServerHandshake handshakedata) {
                 mWebSocketClient.send("{\"enable_topic\": \"/tracked_pose\"}");
                 mWebSocketClient.send("{\"enable_topic\": \"/map\"}");
 
                 String status = handshakedata.getHttpStatusMessage();
-                System.out.println("===robot-core=============== web socket connect success, status is " + status);
                 notifyConnected(status);
             }
 
             @Override
-            public void onMessage(String message) {
-                /*Message handlerMessage = Message.obtain();
-                handlerMessage.what = MESSAGE_DATA;
-                handlerMessage.obj = message;
-                mHandler.sendMessage(handlerMessage);*/
-
+            public void message(String message) {
                 parseTopicData(message);
             }
 
             @Override
-            public void onClose(int code, String reason, boolean remote) {
-                if (code == 10000)
-                    return;
+            public void close(int code, String reason, boolean remote) {
 
-                System.out.println("===robot-core=============== web socket connect closed");
-                websocketAutoConnect();
             }
 
             @Override
-            public void onError(Exception e) {
-                notifyError(e);
-                System.out.println("===robot-core=============== web socket connect error");
-                websocketAutoConnect();
+            public void error(Exception ex) {
+                notifyError(ex);
             }
         };
         mWebSocketClient.connect();
-//        webSocketClient.send("");
     }
 
     public String getDeviceId() {
