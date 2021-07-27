@@ -13,7 +13,7 @@ public abstract class ReconnectingWebSocketClient extends WebSocketClient {
     private boolean debug = true;
     private Integer reconnectInterval = 1000;
     private Integer maxReconnectInterval = 30000;
-    private Double reconnectDecay = 1.5;
+    private Double reconnectDecay = 1.1;
     private Integer reconnectAttempts = 0;
     private Integer maxReconnectAttempts = 5000;
     private Boolean forcedClose = false;

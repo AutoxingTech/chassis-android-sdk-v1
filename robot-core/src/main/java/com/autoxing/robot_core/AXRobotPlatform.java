@@ -1,5 +1,7 @@
 package com.autoxing.robot_core;
 
+import android.util.Base64;
+
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -28,6 +30,7 @@ import org.java_websocket.enums.ReadyState;
 import org.java_websocket.handshake.ServerHandshake;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -419,9 +422,19 @@ public class AXRobotPlatform {
             }
         }
 
-        // temp patch
         if (json.containsKey("overlays")) {
+            JSONObject overlays = json.getJSONObject("overlays");
             json.remove("overlays");
+
+            byte[] encodedBytes = new byte[0];
+            try {
+                encodedBytes = Base64.encode(overlays.toString().getBytes("UTF-8"), Base64.DEFAULT);
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+                System.out.println("failed to encode overlay from json object to string.");
+            }
+            String overlayStr = new String(encodedBytes);
+            json.put("overlays", overlayStr);
         }
 
         Map map = getMapWithUid(mapUid);
