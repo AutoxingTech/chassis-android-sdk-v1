@@ -91,6 +91,8 @@ public class MapCruisingFragment extends Fragment implements View.OnClickListene
 
     private boolean mRunning = false;
 
+    private boolean mBackground = false;
+
     public MapCruisingFragment(Map map) {
         super();
         mMap = map;
@@ -266,6 +268,13 @@ public class MapCruisingFragment extends Fragment implements View.OnClickListene
     public void onResume() {
         super.onResume();
         RobotUtil.setChassisStatus(getActivity(), ChassisStatus.AUTO);
+        mBackground = false;
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mBackground = true;
     }
 
     @Override
@@ -434,6 +443,14 @@ public class MapCruisingFragment extends Fragment implements View.OnClickListene
                     for (Location location : mLocations) {
                         if (mStopCircle)
                             break;
+
+                        while (mBackground) {
+                            try {
+                                Thread.sleep(500);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
 
                         MoveAction moveAction = AXRobotPlatform.getInstance().moveTo(location, new MoveOption(), .0f);
 

@@ -143,6 +143,22 @@ public class AXRobotPlatform {
                     mPose = pose;
                     topic.setPose(pose);
                     mOccupancyGrids.add(topic);
+                } else if (topicName.equals("/chassis/pose")) {
+                    PoseTopic topic = new PoseTopic();
+                    topic.setTopic(topicJson.getString("topic"));
+                    topic.setStamp(topicJson.getLong("stamp"));
+
+                    Pose pose = new Pose();
+                    JSONArray positions = topicJson.getJSONArray("pos");
+                    pose.setX(positions.getFloat(0));
+                    pose.setY(positions.getFloat(1));
+                    pose.setZ(0);
+
+                    pose.setYaw(topicJson.getFloat("ori"));
+
+                    mPose = pose;
+                    topic.setPose(pose);
+                    mOccupancyGrids.add(topic);
                 }
             }
         }
@@ -548,7 +564,6 @@ public class AXRobotPlatform {
         HashMap hashMap = new HashMap();
         hashMap.put("position", list);
         hashMap.put("ori", pose.getYaw());
-        System.out.println("===robot-core===============pos.x=" + pose.getX() + ", pos.y=" + pose.getY() + ", pos.z=" + pose.getZ() + ", ori=" + pose.getYaw());
         Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_POSE), hashMap, NetUtil.HTTP_METHOD.post);
 
         if (res == null)
@@ -570,12 +585,8 @@ public class AXRobotPlatform {
         hashMap.put("target_x",location.getX());
         hashMap.put("target_y",location.getY());
         hashMap.put("target_z",location.getZ());
-        System.out.println("===robot-core===============x=" + location.getX() + ", y=" + location.getY() + ", z=" + location.getZ());
         if (option.isWithYaw()) {
-            System.out.println("===robot-core===============yaw=" + yaw);
             hashMap.put("target_ori", yaw);
-        } else {
-            System.out.println("===robot-core===============not use yaw");
         }
         Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES), hashMap, NetUtil.HTTP_METHOD.post);
         if (res == null)
@@ -691,8 +702,38 @@ public class AXRobotPlatform {
         return res.code() == 200;
     }
 
-    public MoveAction goHome() {
+    public MoveAction goHome(Location location, float yaw, int retryCount) {
+        HashMap hashMap = new HashMap();
+        hashMap.put("target_x",location.getX());
+        hashMap.put("target_y",location.getY());
+        hashMap.put("target_z",location.getZ());
+        hashMap.put("target_ori", yaw);
+        hashMap.put("is_charging", true);
+        hashMap.put("retry_count", retryCount);
+
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES), hashMap, NetUtil.HTTP_METHOD.post);
+        if (res == null)
+            return null;
+
+        if (res.code() / 100 != 2)
+            return null;
+
+        JSONObject jsonObject = null;
+        try {
+            jsonObject = JSON.parseObject(res.body().string());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassCastException e) {
+            e.printStackTrace();
+        }
+
+        if (jsonObject == null)
+            return null;
+
         MoveAction action = new MoveAction();
+        action.setId(jsonObject.getInteger("id"));
+        String stateStr = jsonObject.getString("state");
+        action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
         return action;
     }
 
