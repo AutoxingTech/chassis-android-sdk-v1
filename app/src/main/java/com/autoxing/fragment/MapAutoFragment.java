@@ -85,6 +85,7 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
 
     private DecimalFormat mDf = new DecimalFormat("##0.00");
 
+    private float mTargetPospRadiusPx;
     private float mCurPospRadiusPx;
 
     public MapAutoFragment(Map map) {
@@ -103,7 +104,8 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                 mCoordinateUtil.setOrigin(mMap.getOriginX(), mMap.getOriginY());
                 mCoordinateUtil.setResolution(mMap.getResolution());
             }
-            mCurPospRadiusPx = DensityUtil.dip2px(getContext(),5.f);
+            mTargetPospRadiusPx = DensityUtil.dip2px(getContext(),5.f);
+            mCurPospRadiusPx = DensityUtil.dip2px(getContext(),10.f);
             AXRobotPlatform.getInstance().addLisener(this);
             initView(mLayout);
             initData();
@@ -231,8 +233,8 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                     mTargetViewPoint.setX(moveX);
                     mTargetViewPoint.setY(moveY);
 
-                    imageX -= mCurPospRadiusPx;
-                    imageY -= mCurPospRadiusPx;
+                    imageX -= mTargetPospRadiusPx;
+                    imageY -= mTargetPospRadiusPx;
 
                     if (mAnchor != null) {
                         mAnchor.setX(imageX);
@@ -243,8 +245,8 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                         mContainer.addView(mAnchor);
 
                         FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) mAnchor.getLayoutParams();
-                        params.width = (int) mCurPospRadiusPx * 2;
-                        params.height = (int) mCurPospRadiusPx * 2;
+                        params.width = (int) mTargetPospRadiusPx * 2;
+                        params.height = (int) mTargetPospRadiusPx * 2;
                         mAnchor.setLayoutParams(params);
                         mAnchor.setScaleType(ImageView.ScaleType.FIT_XY);
 
@@ -275,8 +277,22 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                     float viewX = dest[0];
                     float viewY = dest[1];
 
-                    mAnchor.setX(viewX - mCurPospRadiusPx);
-                    mAnchor.setY(viewY - mCurPospRadiusPx);
+                    mAnchor.setX(viewX - mTargetPospRadiusPx);
+                    mAnchor.setY(viewY - mTargetPospRadiusPx);
+                }
+
+                {
+                    int bitmapHeight = mBitmap.getHeight();
+                    float[] src = { mCurrentPos.getX(), bitmapHeight - mCurrentPos.getY() };
+                    float[] dest = { .0f, .0f };
+                    mMatrix.mapPoints(dest, src);
+                    float screenX = dest[0];
+                    float screenY = dest[1];
+
+                    screenX -= mCurPospRadiusPx;
+                    screenY -= mCurPospRadiusPx;
+                    mCurrentPos.setX(screenX);
+                    mCurrentPos.setY(screenY);
                 }
 
                 /*
@@ -343,7 +359,6 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                 @Override
                 public void run() {
                     int bitmapHeight = mBitmap.getHeight();
-                    float curPospRadiusPx = DensityUtil.dip2px(activity,10.f);
 
                     // 像素坐标转 view 坐标
                     float screenX = .0f;
@@ -359,8 +374,8 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
                         screenY = dest[1];
                     }
 
-                    screenX -= curPospRadiusPx;
-                    screenY -= curPospRadiusPx;
+                    screenX -= mCurPospRadiusPx;
+                    screenY -= mCurPospRadiusPx;
                     mCurrentPos.setX(screenX);
                     mCurrentPos.setY(screenY);
 

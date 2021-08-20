@@ -82,7 +82,7 @@ public class MapCruisingFragment extends Fragment implements View.OnClickListene
 
     private CoordinateUtil mCoordinateUtil = null;
 
-    private float mCurPospRadiusPx;
+    private float mCurPosRadiusPx;
 
     private int mCircleIndex = 0;     // start from 1
 
@@ -109,7 +109,7 @@ public class MapCruisingFragment extends Fragment implements View.OnClickListene
                 mCoordinateUtil.setOrigin(mMap.getOriginX(), mMap.getOriginY());
                 mCoordinateUtil.setResolution(mMap.getResolution());
             }
-            mCurPospRadiusPx = DensityUtil.dip2px(getContext(),5.f);
+            mCurPosRadiusPx = DensityUtil.dip2px(getContext(),5.f);
             AXRobotPlatform.getInstance().addLisener(this);
             initView(mLayout);
             initData();
@@ -213,16 +213,16 @@ public class MapCruisingFragment extends Fragment implements View.OnClickListene
                     targetViewPoint.setY(moveY);
                     mTargetViewPoints.add(targetViewPoint);
 
-                    imageX -= mCurPospRadiusPx;
-                    imageY -= mCurPospRadiusPx;
+                    imageX -= mCurPosRadiusPx;
+                    imageY -= mCurPosRadiusPx;
 
                     ImageView anchor = new ImageView(getContext());
                     anchor.setImageDrawable(getResources().getDrawable((R.drawable.anchor)));
                     mContainer.addView(anchor);
 
                     FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) anchor.getLayoutParams();
-                    params.width = (int) mCurPospRadiusPx * 2;
-                    params.height = (int) mCurPospRadiusPx * 2;
+                    params.width = (int) mCurPosRadiusPx * 2;
+                    params.height = (int) mCurPosRadiusPx * 2;
                     anchor.setLayoutParams(params);
                     anchor.setScaleType(ImageView.ScaleType.FIT_XY);
 
@@ -257,8 +257,8 @@ public class MapCruisingFragment extends Fragment implements View.OnClickListene
                     float viewX = dest[0];
                     float viewY = dest[1];
 
-                    anchor.setX(viewX - mCurPospRadiusPx);
-                    anchor.setY(viewY - mCurPospRadiusPx);
+                    anchor.setX(viewX - mCurPosRadiusPx);
+                    anchor.setY(viewY - mCurPosRadiusPx);
                 }
             }
         });

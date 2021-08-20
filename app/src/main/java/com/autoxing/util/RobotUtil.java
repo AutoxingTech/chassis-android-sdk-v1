@@ -5,6 +5,7 @@ import android.widget.Toast;
 
 import com.autoxing.robot_core.AXRobotPlatform;
 import com.autoxing.robot_core.bean.ChassisStatus;
+import com.autoxing.robot_core.bean.Map;
 import com.autoxing.robot_core.util.CommonCallback;
 import com.autoxing.robot_core.util.ThreadPoolUtil;
 
@@ -32,19 +33,19 @@ public class RobotUtil {
         });
     }
 
-    public static void getCurrentMapId(Activity context) {
+    public static void getCurrentMap(Activity context) {
         ThreadPoolUtil.runAsync(new CommonCallback() {
             @Override
             public void run() {
-                int mapId = AXRobotPlatform.getInstance().getCurrentMapId();
+                Map map = AXRobotPlatform.getInstance().getCurrentMap();
 
                 context.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         StringBuilder sb = new StringBuilder();
-                        sb.append(mapId != -1 ? "succed" : "failed");
+                        sb.append(map != null ? "succed" : "failed");
                         sb.append(" to get current map");
-                        sb.append(mapId != -1 ? "<" + mapId + ">": "");
+                        sb.append(map != null ? "<" + map.getId() + ">": "");
                         Toast.makeText(context, sb.toString(),1200).show();
                     }
                 });

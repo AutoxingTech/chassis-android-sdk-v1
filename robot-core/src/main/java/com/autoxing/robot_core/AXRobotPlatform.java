@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.autoxing.robot_core.action.ActionStatus;
+import com.autoxing.robot_core.action.Path;
 import com.autoxing.robot_core.bean.ChassisStatus;
 import com.autoxing.robot_core.action.MoveAction;
 import com.autoxing.robot_core.geometry.Line;
@@ -28,6 +29,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Vector;
 
 import okhttp3.Response;
 
@@ -53,6 +55,10 @@ public class AXRobotPlatform {
     private List<TopicBase> mOccupancyGrids = new ArrayList<>();
 
     private Pose mPose = null;
+
+    private int mLocalizationQuality = 0;
+
+    private Path mPath = null;
 
     public void connect(String ip, int port, String token) {
         if (ip != null && port != -1) {
@@ -143,22 +149,23 @@ public class AXRobotPlatform {
                     mPose = pose;
                     topic.setPose(pose);
                     mOccupancyGrids.add(topic);
-                } else if (topicName.equals("/chassis/pose")) {
-                    PoseTopic topic = new PoseTopic();
-                    topic.setTopic(topicJson.getString("topic"));
-                    topic.setStamp(topicJson.getLong("stamp"));
-
-                    Pose pose = new Pose();
-                    JSONArray positions = topicJson.getJSONArray("pos");
-                    pose.setX(positions.getFloat(0));
-                    pose.setY(positions.getFloat(1));
-                    pose.setZ(0);
-
-                    pose.setYaw(topicJson.getFloat("ori"));
-
-                    mPose = pose;
-                    topic.setPose(pose);
-                    mOccupancyGrids.add(topic);
+                } else if (topicName.equals("/positioning_qualities")) {
+                    boolean reliable = topicJson.getBoolean("reliable");
+                    if (reliable) {
+                        mLocalizationQuality = 100;
+                    } else {
+                        mLocalizationQuality = 0;
+                    }
+                } else if (topicName.equals("/chassis/path")) {
+                    JSONArray positions = topicJson.getJSONArray("positions");
+                    int pointCount = positions.size();
+                    Vector<Location> locations = new Vector<>(pointCount);
+                    for (int j = 0; j < pointCount; j++) {
+                        JSONArray position = positions.getJSONArray(j);
+                        Location location = new Location(position.getFloat(0), position.getFloat(1), 0);
+                        locations.add(location);
+                    }
+                    mPath = new Path(locations);
                 }
             }
         }
@@ -175,6 +182,7 @@ public class AXRobotPlatform {
             public void open(ServerHandshake handshakedata) {
                 mWebSocketClient.send("{\"enable_topic\": \"/tracked_pose\"}");
                 mWebSocketClient.send("{\"enable_topic\": \"/map\"}");
+                mWebSocketClient.send("{\"enable_topic\": \"/path\"}");
 
                 String status = handshakedata.getHttpStatusMessage();
                 notifyConnected(status);
@@ -208,10 +216,6 @@ public class AXRobotPlatform {
 
     public boolean getBatteryIsCharging() {
         return false;
-    }
-
-    public int getLocalizationQuality() {
-        return 1;
     }
 
     public boolean setChassisStatus(ChassisStatus status) {
@@ -503,22 +507,33 @@ public class AXRobotPlatform {
         return setPose(pose);
     }
 
-    public int getCurrentMapId() {
-        String res = NetUtil.syncReq(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_CURRENT_MAP), NetUtil.HTTP_METHOD.get);
+    public Map getCurrentMap() {
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_CURRENT_MAP), NetUtil.HTTP_METHOD.get);
+        if (res == null)
+            return null;
+
+        if (res.code() != 200)
+            return null;
+
         JSONObject jsonObject = null;
         try {
-            jsonObject = JSON.parseObject(res);
-        } catch (RuntimeException e) {
+            jsonObject = JSON.parseObject(res.body().string());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassCastException e) {
             e.printStackTrace();
         }
 
         if (jsonObject == null)
-            return -1;
+            return null;
 
-        if (jsonObject.get("map_id") == null)
-            return -1;
-
-        return jsonObject.getInteger("map_id");
+        Map map= new Map();
+        map.setId(jsonObject.getInteger("id"));
+        map.setUid(jsonObject.getString("uid"));
+        map.setMapName(jsonObject.getString("map_name"));
+        map.setCreateTime(jsonObject.getLong("create_time"));
+        map.setUrl(jsonObject.getString("url"));
+        return map;
     }
 
     public boolean removeCurrentMap() {
@@ -545,8 +560,7 @@ public class AXRobotPlatform {
                 }
             }
 
-            if ((exclude && !flag)
-            || (!exclude && flag)) {
+            if ((exclude && !flag) || (!exclude && flag)) {
                 map.delete();
             }
         }
@@ -572,13 +586,9 @@ public class AXRobotPlatform {
         return  res.code() == 200;
     }
 
-    public void addLines(List<Line> lines) {
+    public int getLocalizationQuality() { return mLocalizationQuality; }
 
-    }
-
-    public void clearLines() {
-
-    }
+    public Path getRemainingPath() { return mPath; }
 
     public MoveAction moveTo(Location location, MoveOption option, float yaw) {
         HashMap hashMap = new HashMap();
@@ -709,7 +719,7 @@ public class AXRobotPlatform {
         hashMap.put("target_z",location.getZ());
         hashMap.put("target_ori", yaw);
         hashMap.put("is_charging", true);
-        hashMap.put("retry_count", retryCount);
+        hashMap.put("charge_retry_count", retryCount);
 
         Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES), hashMap, NetUtil.HTTP_METHOD.post);
         if (res == null)
