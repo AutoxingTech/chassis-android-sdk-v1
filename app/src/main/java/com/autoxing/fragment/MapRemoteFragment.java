@@ -12,7 +12,7 @@ import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
 import com.autoxing.controller.R;
-import com.autoxing.robot_core.bean.ChassisStatus;
+import com.autoxing.robot_core.bean.ChassisControlMode;
 import com.autoxing.util.RobotUtil;
 import com.autoxing.view.CustomViewPager;
 import com.flyco.tablayout.SegmentTabLayout;
@@ -111,6 +111,6 @@ public class MapRemoteFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        RobotUtil.setChassisStatus(getActivity(), ChassisStatus.REMOTE);
+        RobotUtil.setChassisControlMode(getActivity(), ChassisControlMode.REMOTE);
     }
 }

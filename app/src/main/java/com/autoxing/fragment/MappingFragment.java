@@ -18,7 +18,7 @@ import androidx.fragment.app.Fragment;
 import com.autoxing.controller.R;
 import com.autoxing.robot_core.AXRobotPlatform;
 import com.autoxing.robot_core.IMappingListener;
-import com.autoxing.robot_core.bean.ChassisStatus;
+import com.autoxing.robot_core.bean.ChassisControlMode;
 import com.autoxing.robot_core.bean.Mapping;
 import com.autoxing.robot_core.bean.OccupancyGridTopic;
 import com.autoxing.robot_core.bean.PoseTopic;
@@ -319,6 +319,6 @@ public class MappingFragment extends Fragment implements IMappingListener, View.
     @Override
     public void onResume() {
         super.onResume();
-        RobotUtil.setChassisStatus(getActivity(), ChassisStatus.MANUAL);
+        RobotUtil.setChassisControlMode(getActivity(), ChassisControlMode.MANUAL);
     }
 }

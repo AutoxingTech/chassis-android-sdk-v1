@@ -5,9 +5,9 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.autoxing.robot_core.action.ActionStatus;
 import com.autoxing.robot_core.action.Path;
-import com.autoxing.robot_core.bean.ChassisStatus;
+import com.autoxing.robot_core.bean.ChassisControlMode;
 import com.autoxing.robot_core.action.MoveAction;
-import com.autoxing.robot_core.geometry.Line;
+import com.autoxing.robot_core.bean.ChassisStatusTopic;
 import com.autoxing.robot_core.bean.Location;
 import com.autoxing.robot_core.bean.Map;
 import com.autoxing.robot_core.bean.Mapping;
@@ -166,6 +166,13 @@ public class AXRobotPlatform {
                         locations.add(location);
                     }
                     mPath = new Path(locations);
+                } else if (topicName.equals("/chassis_state")) {
+                    ChassisStatusTopic topic = new ChassisStatusTopic();
+                    JSONObject parts = topicJson.getJSONObject("parts");
+                    String controlMode = parts.getString("control_mode").toUpperCase();
+                    topic.setControlMode(ChassisControlMode.valueOf(controlMode));
+                    topic.setEmergencyStopPressed(parts.getBoolean("emergency_stop_pressed"));
+                    mOccupancyGrids.add(topic);
                 }
             }
         }
@@ -183,6 +190,8 @@ public class AXRobotPlatform {
                 mWebSocketClient.send("{\"enable_topic\": \"/tracked_pose\"}");
                 mWebSocketClient.send("{\"enable_topic\": \"/map\"}");
                 mWebSocketClient.send("{\"enable_topic\": \"/path\"}");
+                mWebSocketClient.send("{\"enable_topic\": \"/chassis_state\"}");
+                // mWebSocketClient.send("{\"enable_topic\": \"/alerts\"}");
 
                 String status = handshakedata.getHttpStatusMessage();
                 notifyConnected(status);
@@ -218,9 +227,19 @@ public class AXRobotPlatform {
         return false;
     }
 
-    public boolean setChassisStatus(ChassisStatus status) {
+    public boolean setControlMode(ChassisControlMode mode) {
         HashMap hashmap = new HashMap();
-        hashmap.put("control_mode", status.toString().toLowerCase());
+        hashmap.put("control_mode", mode.toString().toLowerCase());
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_STATUS), hashmap, NetUtil.HTTP_METHOD.patch);
+        if (res == null)
+            return false;
+
+        return res.code() == 200;
+    }
+
+    public boolean setEmergencyStopPressed(boolean stopPressed) {
+        HashMap hashmap = new HashMap();
+        hashmap.put("emergency_stop_pressed", stopPressed);
         Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_STATUS), hashmap, NetUtil.HTTP_METHOD.patch);
         if (res == null)
             return false;
