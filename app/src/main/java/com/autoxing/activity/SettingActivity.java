@@ -47,8 +47,8 @@ public class SettingActivity extends BaseActivity {
                 SharedPreferences.Editor editor = mChassisSp.edit();
                 editor.putInt("serverIndex", position);
                 editor.commit();
-                //String token = "Token " + GlobalUtil.getToken(position);
-                String token = "dRw6JGyzFFwKNfFPQ8FFF";
+                String token = "Token " + GlobalUtil.getToken(position);
+                // String token = "dRw6JGyzFFwKNfFPQ8FFF";
                 AXRobotPlatform.getInstance().connect(pais[0], Integer.parseInt(pais[1]), token);
             }
         });

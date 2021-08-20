@@ -2,6 +2,7 @@ package com.autoxing.fragment;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -29,29 +30,36 @@ import com.autoxing.util.GlobalUtil;
 import com.autoxing.util.RobotUtil;
 import com.autoxing.robot_core.util.CommonCallback;
 import com.autoxing.robot_core.util.ThreadPoolUtil;
+import com.autoxing.view.PinchImageView;
 
 import org.buraktamturk.loadingview.LoadingView;
 
 public class MappingFragment extends Fragment implements IMappingListener, View.OnClickListener {
 
     private View mLayout;
-    private ImageView mMappingImage;
+    private PinchImageView mMappingImage;
     private ImageView mCurrentPos;
     private Button mBtnStart;
     private Button mBtnCancel;
     private Button mBtnStop;
 
     private Point mScreenSize;
-    private OccupancyGridTopic mOccuTopic = null;
+    private Bitmap mBitmap = null;
     private Mapping mMapping = null;
     private LoadingView mLoadingView;
     private CoordinateUtil mCoordinateUtil = new CoordinateUtil();
+
+    private float mScale;
+    private Matrix mMatrix = null;
+
+    private float mCurPospRadiusPx;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         if (mLayout == null) {
             mLayout = inflater.inflate(R.layout.mapping_layout, container,false);
+            mCurPospRadiusPx = DensityUtil.dip2px(getContext(),10.f);
             AXRobotPlatform.getInstance().addLisener(this);
             mScreenSize = GlobalUtil.getScreenSize(getContext());
             initView(mLayout);
@@ -79,6 +87,32 @@ public class MappingFragment extends Fragment implements IMappingListener, View.
         mBtnStart.setOnClickListener(this);
         mBtnCancel.setOnClickListener(this);
         mBtnStop.setOnClickListener(this);
+
+        mMappingImage.addOuterMatrixChangedListener(new PinchImageView.OuterMatrixChangedListener() {
+            @Override
+            public void onOuterMatrixChanged(PinchImageView pinchImageView) {
+                Matrix outerMatrix = pinchImageView.getCurrentImageMatrix(null);
+                float scale = PinchImageView.MathUtils.getMatrixScale(outerMatrix)[0];
+                mScale = scale;
+                mMatrix = outerMatrix;
+
+                /*if (mCurrentPos.getVisibility() == View.VISIBLE) {
+                    // 获取像素坐标
+                    float imageX = mCurrentPos.getX();
+                    float imageY = mCurrentPos.getY();
+
+                    // 像素坐标转 view 坐标
+                    float[] src = { imageX, imageY };
+                    float[] dest = { .0f, .0f };
+                    mMatrix.mapPoints(dest, src);
+                    float viewX = dest[0];
+                    float viewY = dest[1];
+
+                    mCurrentPos.setX(viewX - mCurPospRadiusPx);
+                    mCurrentPos.setY(viewY - mCurPospRadiusPx);
+                }*/
+            }
+        });
     }
 
     @Override
@@ -103,16 +137,17 @@ public class MappingFragment extends Fragment implements IMappingListener, View.
     @Override
     public void onDataChanged(TopicBase topic) {
         if (topic instanceof OccupancyGridTopic) {
-            mOccuTopic = (OccupancyGridTopic) topic;
-            mCoordinateUtil.setOrigin(mOccuTopic.getOriginX(), mOccuTopic.getOriginY());
-            mCoordinateUtil.setResolution(mOccuTopic.getResolution());
+            OccupancyGridTopic occuTopic = (OccupancyGridTopic) topic;
+            mCoordinateUtil.setOrigin(occuTopic.getOriginX(), occuTopic.getOriginY());
+            mCoordinateUtil.setResolution(occuTopic.getResolution());
 
-            Bitmap bitmap = mOccuTopic.getBitmap();
-            int mapWidth = bitmap.getWidth();
-            int mapHeight = bitmap.getHeight();
-            float scale = (float)mapHeight / mapWidth;
+            mBitmap = occuTopic.getBitmap();
+            int mapWidth = mBitmap.getWidth();
+            int mapHeight = mBitmap.getHeight();
+            float bitmapScale = (float)mapHeight / mapWidth;
 
-            int imageViewHeight = (int)(mScreenSize.x * scale);
+            int imageViewHeight = (int)(mScreenSize.x * bitmapScale);
+            mScale = imageViewHeight / mapHeight;
 
             getActivity().runOnUiThread(new Runnable() {
                 @Override
@@ -122,32 +157,43 @@ public class MappingFragment extends Fragment implements IMappingListener, View.
                     params.height = imageViewHeight;
                     mMappingImage.setLayoutParams(params);
                     mMappingImage.setScaleType(ImageView.ScaleType.FIT_XY);
-                    mMappingImage.setImageBitmap(bitmap);
+                    mMappingImage.setImageBitmap(mBitmap);
                 }
             });
-        } else if (topic instanceof PoseTopic && mOccuTopic != null) {
+        } else if (topic instanceof PoseTopic && mBitmap != null) {
             PoseTopic poseTopic = (PoseTopic)topic;
             PointF pt = mCoordinateUtil.worldToScreen(poseTopic.getPose().getLocation());
 
-            int viewWidth = mMappingImage.getWidth();
-            int viewHeight = mMappingImage.getHeight();
+            int bitmapHeight = mBitmap.getHeight();
 
-            Bitmap bitmap = mOccuTopic.getBitmap();
-            int bitmapWidth = bitmap.getWidth();
-            int bitmapHeight = bitmap.getHeight();
-            float scaleX = (float)bitmapWidth / viewWidth;
-            float scaleY = (float)bitmapHeight / viewHeight;
+            // 像素坐标转 view 坐标
+            float screenX = .0f;
+            float screenY = .0f;
+            if (mMatrix == null) {
+                screenX = pt.getX() * mScale;
+                screenY = (bitmapHeight - pt.getY()) * mScale;
+            } else {
+                float[] src = { pt.getX(), bitmapHeight - pt.getY() };
+                float[] dest = { .0f, .0f };
+                mMatrix.mapPoints(dest, src);
+                screenX = dest[0];
+                screenY = dest[1];
+            }
 
-            float curPosRadiusPx = DensityUtil.dip2px(getContext(),10.f);
-            float screenX = (pt.getX() / scaleX) + mMappingImage.getX() - curPosRadiusPx;
-            float screenY = ((bitmapHeight - pt.getY()) / scaleY) + mMappingImage.getY() - curPosRadiusPx;
+            screenX -= mCurPospRadiusPx;
+            screenY -= mCurPospRadiusPx;
 
+            // 逆时针转顺时针
+            float degree = -(float) Math.toDegrees(poseTopic.getPose().getYaw());
+
+            float finalScreenX = screenX;
+            float finalScreenY = screenY;
             getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mCurrentPos.setX(screenX);
-                    mCurrentPos.setY(screenY);
-                    float degree = -(float) Math.toDegrees(poseTopic.getPose().getYaw());
+                    mCurrentPos.setX(finalScreenX);
+                    mCurrentPos.setY(finalScreenY);
+
                     mCurrentPos.setRotation(degree);
                     mCurrentPos.setVisibility(View.VISIBLE);
                 }
