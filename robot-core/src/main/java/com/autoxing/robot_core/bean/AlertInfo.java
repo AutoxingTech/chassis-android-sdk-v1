@@ -1,12 +1,18 @@
 package com.autoxing.robot_core.bean;
 
 public class AlertInfo {
-    private int mCode;
+    private AlertCode mCode;
     private AlertLevel mLevel;
     private String mMessage;
 
-    public void setCode(int code) { mCode = code; }
-    public int getCode() { return mCode; }
+    public AlertInfo() {
+        mCode = AlertCode.UNKNOWN;
+        mLevel = AlertLevel.WARNING;
+        mMessage = null;
+    }
+
+    public void setCode(AlertCode code) { mCode = code; }
+    public AlertCode getCode() { return mCode; }
 
     public void setLevel(AlertLevel level) { mLevel = level; }
     public AlertLevel getLevel() { return mLevel; }

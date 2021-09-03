@@ -5,6 +5,10 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.autoxing.robot_core.action.ActionStatus;
 import com.autoxing.robot_core.action.Path;
+import com.autoxing.robot_core.bean.AlertCode;
+import com.autoxing.robot_core.bean.AlertInfo;
+import com.autoxing.robot_core.bean.AlertLevel;
+import com.autoxing.robot_core.bean.AlertTopic;
 import com.autoxing.robot_core.bean.ChassisControlMode;
 import com.autoxing.robot_core.action.MoveAction;
 import com.autoxing.robot_core.bean.ChassisStatusTopic;
@@ -52,7 +56,7 @@ public class AXRobotPlatform {
     private ReconnectingWebSocketClient mWebSocketClient = null;
     private List<IMappingListener> mListeners = new ArrayList<>();
 
-    private List<TopicBase> mOccupancyGrids = new ArrayList<>();
+    private List<TopicBase> mtopics = new ArrayList<>();
 
     private Pose mPose = null;
 
@@ -96,8 +100,8 @@ public class AXRobotPlatform {
     private void notifyDataChanged() {
         for (int i = 0; i < mListeners.size(); ++i) {
             IMappingListener listener = mListeners.get(i);
-            for (int j = 0; j < mOccupancyGrids.size(); ++j) {
-                mListeners.get(i).onDataChanged(mOccupancyGrids.get(j));
+            for (int j = 0; j < mtopics.size(); ++j) {
+                mListeners.get(i).onDataChanged(mtopics.get(j));
             }
         }
     }
@@ -117,7 +121,7 @@ public class AXRobotPlatform {
     private void parseTopicData(String data) {
         JSONObject root = JSON.parseObject(data);
         JSONArray topics = root.getJSONArray("topics");
-        mOccupancyGrids.clear();
+        mtopics.clear();
         if (topics != null) {
             for (int i = 0; i < topics.size(); i++) {
                 JSONObject topicJson = topics.getJSONObject(i);
@@ -132,7 +136,7 @@ public class AXRobotPlatform {
                     JSONArray origins = topicJson.getJSONArray("origin");
                     topic.setOriginX(origins.getFloat(0));
                     topic.setOriginY(origins.getFloat(1));
-                    mOccupancyGrids.add(topic);
+                    mtopics.add(topic);
                 } else if (topicName.equals("/chassis/pose")) {
                     PoseTopic topic = new PoseTopic();
                     topic.setTopic(topicJson.getString("topic"));
@@ -148,7 +152,7 @@ public class AXRobotPlatform {
 
                     mPose = pose;
                     topic.setPose(pose);
-                    mOccupancyGrids.add(topic);
+                    mtopics.add(topic);
                 } else if (topicName.equals("/positioning_qualities")) {
                     boolean reliable = topicJson.getBoolean("reliable");
                     if (reliable) {
@@ -172,7 +176,29 @@ public class AXRobotPlatform {
                     String controlMode = parts.getString("control_mode").toUpperCase();
                     topic.setControlMode(ChassisControlMode.valueOf(controlMode));
                     topic.setEmergencyStopPressed(parts.getBoolean("emergency_stop_pressed"));
-                    mOccupancyGrids.add(topic);
+                    mtopics.add(topic);
+                } else if (topicName.equals("/alerts")) {
+                    AlertTopic topic =  new AlertTopic();
+                    JSONArray parts = topicJson.getJSONArray("parts");
+                    int partCount = parts.size();
+                    for (int j = 0; j < partCount; j++) {
+                        JSONObject part = parts.getJSONObject(j);
+                        JSONArray alerts = part.getJSONArray("alerts");
+                        int alertCount = alerts.size();
+                        for (int m = 0; m < alertCount; ++m) {
+                            JSONObject alertInfoJson = alerts.getJSONObject(m);
+                            int code = alertInfoJson.getIntValue("code");
+                            String levelMessage = alertInfoJson.getString("level");
+
+                            AlertInfo alertInfo = new AlertInfo();
+                            alertInfo.setCode(AlertCode.valueOf(code));
+                            alertInfo.setLevel(AlertLevel.valueOf(levelMessage.toUpperCase()));
+                            alertInfo.setMessage(alertInfoJson.getString("msg"));
+                            topic.addAlertInfo(alertInfo);
+                        }
+                        topic.setPartName(part.getString("part_name"));
+                    }
+                    mtopics.add(topic);
                 }
             }
         }
@@ -191,7 +217,7 @@ public class AXRobotPlatform {
                 mWebSocketClient.send("{\"enable_topic\": \"/map\"}");
                 mWebSocketClient.send("{\"enable_topic\": \"/path\"}");
                 mWebSocketClient.send("{\"enable_topic\": \"/chassis_state\"}");
-                // mWebSocketClient.send("{\"enable_topic\": \"/alerts\"}");
+                mWebSocketClient.send("{\"enable_topic\": \"/alerts\"}");
 
                 String status = handshakedata.getHttpStatusMessage();
                 notifyConnected(status);
