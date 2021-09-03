@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.autoxing.robot_core.action.ActionStatus;
+import com.autoxing.robot_core.action.MoveFailReason;
 import com.autoxing.robot_core.action.Path;
 import com.autoxing.robot_core.bean.AlertCode;
 import com.autoxing.robot_core.bean.AlertInfo;
@@ -666,6 +667,8 @@ public class AXRobotPlatform {
         action.setId(jsonObject.getInteger("id"));
         String stateStr = jsonObject.getString("state");
         action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
+        int failReasonValue = jsonObject.getIntValue("fail_reason");
+        action.setMoveFailReason(MoveFailReason.valueOf(failReasonValue));
         return action;
     }
 
@@ -695,6 +698,8 @@ public class AXRobotPlatform {
         action.setId(jsonObject.getInteger("id"));
         String stateStr = jsonObject.getString("state");
         action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
+        int failReasonValue = jsonObject.getIntValue("fail_reason");
+        action.setMoveFailReason(MoveFailReason.valueOf(failReasonValue));
         return action;
     }
 
@@ -714,6 +719,8 @@ public class AXRobotPlatform {
                 moveAction.setId(jsonObject.getInteger("id"));
                 String stateStr = jsonObject.getString("state");
                 moveAction.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
+                int failReasonValue = jsonObject.getIntValue("fail_reason");
+                moveAction.setMoveFailReason(MoveFailReason.valueOf(failReasonValue));
                 moveActions.add(moveAction);
             }
         }
@@ -744,6 +751,8 @@ public class AXRobotPlatform {
         action.setId(jsonObject.getInteger("id"));
         String stateStr = jsonObject.getString("state");
         action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
+        int failReasonValue = jsonObject.getIntValue("fail_reason");
+        action.setMoveFailReason(MoveFailReason.valueOf(failReasonValue));
         return action;
     }
 
@@ -789,6 +798,8 @@ public class AXRobotPlatform {
         action.setId(jsonObject.getInteger("id"));
         String stateStr = jsonObject.getString("state");
         action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
+        int failReasonValue = jsonObject.getIntValue("fail_reason");
+        action.setMoveFailReason(MoveFailReason.valueOf(failReasonValue));
         return action;
     }
 

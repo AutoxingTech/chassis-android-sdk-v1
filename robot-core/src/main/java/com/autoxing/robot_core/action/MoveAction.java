@@ -38,6 +38,7 @@ public class MoveAction extends IAction {
         return succ;
     }
 
+    // not used
     @Override
     public Path getRemainingPath() { return new Path(); }
 
@@ -63,6 +64,8 @@ public class MoveAction extends IAction {
 
         String stateStr = jsonObject.getString("state");
         mStatus = ActionStatus.valueOf(stateStr.toUpperCase());
+        int failReasonValue = jsonObject.getIntValue("fail_reason");
+        mFailReason= MoveFailReason.valueOf(failReasonValue);
         return mStatus;
     }
 }
