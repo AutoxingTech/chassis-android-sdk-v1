@@ -728,7 +728,7 @@ public class AXRobotPlatform {
     }
 
     public MoveAction getCurrentAction() {
-        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES) + "/latest", NetUtil.HTTP_METHOD.get);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES) + "/current", NetUtil.HTTP_METHOD.get);
         if (res == null)
             return null;
 
