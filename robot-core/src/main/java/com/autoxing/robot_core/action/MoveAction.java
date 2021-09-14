@@ -42,7 +42,7 @@ public class MoveAction extends IAction {
     @Override
     public Path getRemainingPath() { return new Path(); }
 
-    private ActionStatus getCurrentStatus() {
+    public ActionStatus getCurrentStatus() {
         Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES) + "/" + this.mId +  "?format=json", NetUtil.HTTP_METHOD.get);
         if (res == null)
             return ActionStatus.FAILED;
