@@ -10,6 +10,7 @@ import com.autoxing.robot_core.bean.AlertCode;
 import com.autoxing.robot_core.bean.AlertInfo;
 import com.autoxing.robot_core.bean.AlertLevel;
 import com.autoxing.robot_core.bean.AlertTopic;
+import com.autoxing.robot_core.bean.BatteryStateTopic;
 import com.autoxing.robot_core.bean.ChassisControlMode;
 import com.autoxing.robot_core.action.MoveAction;
 import com.autoxing.robot_core.bean.ChassisStatusTopic;
@@ -128,78 +129,19 @@ public class AXRobotPlatform {
                 JSONObject topicJson = topics.getJSONObject(i);
                 String topicName = topicJson.getString("topic");
                 if (topicName.equals("/chassis/occupancy_grid")) {
-                    OccupancyGridTopic topic = new OccupancyGridTopic();
-                    topic.setTopic(topicJson.getString("topic"));
-                    topic.setStamp(topicJson.getLong("stamp"));
-                    topic.setData(topicJson.getString("data"));
-                    topic.setResolution(topicJson.getFloat("resolution"));
-
-                    JSONArray origins = topicJson.getJSONArray("origin");
-                    topic.setOriginX(origins.getFloat(0));
-                    topic.setOriginY(origins.getFloat(1));
-                    mtopics.add(topic);
+                    mtopics.add(parseChassisOccupancyGrid(topicJson));
                 } else if (topicName.equals("/chassis/pose")) {
-                    PoseTopic topic = new PoseTopic();
-                    topic.setTopic(topicJson.getString("topic"));
-                    topic.setStamp(topicJson.getLong("stamp"));
-
-                    Pose pose = new Pose();
-                    JSONArray positions = topicJson.getJSONArray("pos");
-                    pose.setX(positions.getFloat(0));
-                    pose.setY(positions.getFloat(1));
-                    pose.setZ(0);
-
-                    pose.setYaw(topicJson.getFloat("ori"));
-
-                    mPose = pose;
-                    topic.setPose(pose);
-                    mtopics.add(topic);
+                    mtopics.add(parseChassisPose(topicJson));
                 } else if (topicName.equals("/positioning_qualities")) {
-                    boolean reliable = topicJson.getBoolean("reliable");
-                    if (reliable) {
-                        mLocalizationQuality = 100;
-                    } else {
-                        mLocalizationQuality = 0;
-                    }
+                    parsePositioningQualities(topicJson);
                 } else if (topicName.equals("/chassis/path")) {
-                    JSONArray positions = topicJson.getJSONArray("positions");
-                    int pointCount = positions.size();
-                    Vector<Location> locations = new Vector<>(pointCount);
-                    for (int j = 0; j < pointCount; j++) {
-                        JSONArray position = positions.getJSONArray(j);
-                        Location location = new Location(position.getFloat(0), position.getFloat(1), 0);
-                        locations.add(location);
-                    }
-                    mPath = new Path(locations);
+                    parseChassisPath(topicJson);
                 } else if (topicName.equals("/chassis_state")) {
-                    ChassisStatusTopic topic = new ChassisStatusTopic();
-                    JSONObject parts = topicJson.getJSONObject("parts");
-                    String controlMode = parts.getString("control_mode").toUpperCase();
-                    topic.setControlMode(ChassisControlMode.valueOf(controlMode));
-                    topic.setEmergencyStopPressed(parts.getBoolean("emergency_stop_pressed"));
-                    mtopics.add(topic);
+                    mtopics.add(parseChassisState(topicJson));
                 } else if (topicName.equals("/alerts")) {
-                    AlertTopic topic =  new AlertTopic();
-                    JSONArray parts = topicJson.getJSONArray("parts");
-                    int partCount = parts.size();
-                    for (int j = 0; j < partCount; j++) {
-                        JSONObject part = parts.getJSONObject(j);
-                        JSONArray alerts = part.getJSONArray("alerts");
-                        int alertCount = alerts.size();
-                        for (int m = 0; m < alertCount; ++m) {
-                            JSONObject alertInfoJson = alerts.getJSONObject(m);
-                            int code = alertInfoJson.getIntValue("code");
-                            String levelMessage = alertInfoJson.getString("level");
-
-                            AlertInfo alertInfo = new AlertInfo();
-                            alertInfo.setCode(AlertCode.valueOf(code));
-                            alertInfo.setLevel(AlertLevel.valueOf(levelMessage.toUpperCase()));
-                            alertInfo.setMessage(alertInfoJson.getString("msg"));
-                            topic.addAlertInfo(alertInfo);
-                        }
-                        topic.setPartName(part.getString("part_name"));
-                    }
-                    mtopics.add(topic);
+                    mtopics.add(parseAlerts(topicJson));
+                } else if (topicName.equals("/battery_state")) {
+                    mtopics.add(parseBatteryState(topicJson));
                 }
             }
         }
@@ -219,6 +161,7 @@ public class AXRobotPlatform {
                 mWebSocketClient.send("{\"enable_topic\": \"/path\"}");
                 mWebSocketClient.send("{\"enable_topic\": \"/chassis_state\"}");
                 mWebSocketClient.send("{\"enable_topic\": \"/alerts\"}");
+                mWebSocketClient.send("{\"enable_topic\": \"/battery_state\"}");
 
                 String status = handshakedata.getHttpStatusMessage();
                 notifyConnected(status);
@@ -240,6 +183,107 @@ public class AXRobotPlatform {
             }
         };
         mWebSocketClient.connect();
+    }
+
+    private OccupancyGridTopic parseChassisOccupancyGrid(JSONObject topicJson) {
+        OccupancyGridTopic topic = new OccupancyGridTopic();
+        topic.setTopic(topicJson.getString("topic"));
+        topic.setTimestamp(topicJson.getLongValue("stamp"));
+        topic.setData(topicJson.getString("data"));
+        topic.setResolution(topicJson.getFloatValue("resolution"));
+
+        JSONArray origins = topicJson.getJSONArray("origin");
+        topic.setOriginX(origins.getFloatValue(0));
+        topic.setOriginY(origins.getFloatValue(1));
+        return topic;
+    }
+
+    private PoseTopic parseChassisPose(JSONObject topicJson) {
+        PoseTopic topic = new PoseTopic();
+        topic.setTopic(topicJson.getString("topic"));
+        topic.setTimestamp(topicJson.getLongValue("stamp"));
+
+        Pose pose = new Pose();
+        JSONArray positions = topicJson.getJSONArray("pos");
+        pose.setX(positions.getFloatValue(0));
+        pose.setY(positions.getFloatValue(1));
+        pose.setZ(0);
+
+        pose.setYaw(topicJson.getFloatValue("ori"));
+
+        mPose = pose;
+        topic.setPose(pose);
+        return topic;
+    }
+
+    private void parsePositioningQualities(JSONObject topicJson) {
+        boolean reliable = topicJson.getBooleanValue("reliable");
+        if (reliable) {
+            mLocalizationQuality = 100;
+        } else {
+            mLocalizationQuality = 0;
+        }
+    }
+
+    private void parseChassisPath(JSONObject topicJson) {
+        JSONArray positions = topicJson.getJSONArray("positions");
+        int pointCount = positions.size();
+        Vector<Location> locations = new Vector<>(pointCount);
+        for (int j = 0; j < pointCount; j++) {
+            JSONArray position = positions.getJSONArray(j);
+            Location location = new Location(position.getFloatValue(0), position.getFloatValue(1), 0);
+            locations.add(location);
+        }
+        mPath = new Path(locations);
+    }
+
+    private ChassisStatusTopic parseChassisState(JSONObject topicJson) {
+        JSONObject parts = topicJson.getJSONObject("parts");
+        String controlMode = parts.getString("control_mode").toUpperCase();
+
+        ChassisStatusTopic topic = new ChassisStatusTopic();
+        topic.setControlMode(ChassisControlMode.valueOf(controlMode));
+        topic.setEmergencyStopPressed(parts.getBooleanValue("emergency_stop_pressed"));
+        return topic;
+    }
+
+    private AlertTopic parseAlerts(JSONObject topicJson) {
+        AlertTopic topic =  new AlertTopic();
+        JSONArray parts = topicJson.getJSONArray("parts");
+        int partCount = parts.size();
+        for (int j = 0; j < partCount; j++) {
+            JSONObject part = parts.getJSONObject(j);
+            JSONArray alerts = part.getJSONArray("alerts");
+            int alertCount = alerts.size();
+            for (int m = 0; m < alertCount; ++m) {
+                JSONObject alertInfoJson = alerts.getJSONObject(m);
+                int code = alertInfoJson.getIntValue("code");
+                String levelMessage = alertInfoJson.getString("level");
+
+                AlertInfo alertInfo = new AlertInfo();
+                alertInfo.setCode(AlertCode.valueOf(code));
+                alertInfo.setLevel(AlertLevel.valueOf(levelMessage.toUpperCase()));
+                alertInfo.setMessage(alertInfoJson.getString("msg"));
+                topic.addAlertInfo(alertInfo);
+            }
+            topic.setPartName(part.getString("part_name"));
+        }
+        return topic;
+    }
+
+    private BatteryStateTopic parseBatteryState(JSONObject topicJson) {
+        long timestamp = topicJson.getLongValue("secs");
+        float voltage = topicJson.getFloatValue("voltage");
+        float current = topicJson.getFloatValue("current");
+        float percentage = topicJson.getFloatValue("percentage");
+
+        BatteryStateTopic topic =  new BatteryStateTopic();
+        topic.setTimestamp(timestamp);
+        topic.setVoltage(voltage);
+        topic.setCurrent(current);
+        topic.setPercentage(percentage);
+
+        return topic;
     }
 
     public String getDeviceId() {
