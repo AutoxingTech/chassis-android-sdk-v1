@@ -22,6 +22,7 @@ import com.autoxing.robot_core.bean.MoveOption;
 import com.autoxing.robot_core.bean.OccupancyGridTopic;
 import com.autoxing.robot_core.bean.Pose;
 import com.autoxing.robot_core.bean.PoseTopic;
+import com.autoxing.robot_core.bean.PowerSupplyStatus;
 import com.autoxing.robot_core.bean.Rotation;
 import com.autoxing.robot_core.bean.TopicBase;
 import com.autoxing.robot_core.util.NetUtil;
@@ -276,12 +277,14 @@ public class AXRobotPlatform {
         float voltage = topicJson.getFloatValue("voltage");
         float current = topicJson.getFloatValue("current");
         float percentage = topicJson.getFloatValue("percentage");
+        String powerSupplyStatus = topicJson.getString("power_supply_status");
 
         BatteryStateTopic topic =  new BatteryStateTopic();
         topic.setTimestamp(timestamp);
         topic.setVoltage(voltage);
         topic.setCurrent(current);
         topic.setPercentage(percentage);
+        topic.setPowerSupplyStatus(PowerSupplyStatus.valueOf(powerSupplyStatus.toUpperCase()));
 
         return topic;
     }
