@@ -675,6 +675,7 @@ public class AXRobotPlatform {
     public Path getRemainingPath() { return mPath; }
 
     public MoveAction moveTo(Location location, MoveOption option, float yaw) {
+        long timeStamp = System.currentTimeMillis();
         HashMap hashMap = new HashMap();
         hashMap.put("target_x",location.getX());
         hashMap.put("target_y",location.getY());
@@ -689,9 +690,12 @@ public class AXRobotPlatform {
         if (res.code() / 100 != 2)
             return null;
 
+        int costTime = -1;
         JSONObject jsonObject = null;
         try {
             jsonObject = JSON.parseObject(res.body().string());
+            String costTimeStr = res.header("X-Page-Generation-Duration-Ms", "-1");
+            costTime = Integer.parseInt(costTimeStr);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassCastException e) {
@@ -707,6 +711,11 @@ public class AXRobotPlatform {
         action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
         int failReasonValue = jsonObject.getIntValue("fail_reason");
         action.setMoveFailReason(MoveFailReason.valueOf(failReasonValue));
+        action.setCostTime(costTime);
+
+        long clientCostTime = System.currentTimeMillis() - timeStamp;
+        System.out.println("===robot-core-net===============move to status = " + stateStr + ",clientCostTime = " + clientCostTime + ",costTime = " + action.getCostTime());
+
         return action;
     }
 
@@ -820,9 +829,12 @@ public class AXRobotPlatform {
         if (res.code() / 100 != 2)
             return null;
 
+        int costTime = -1;
         JSONObject jsonObject = null;
         try {
             jsonObject = JSON.parseObject(res.body().string());
+            String costTimeStr = res.header("X-Page-Generation-Duration-Ms", "-1");
+            costTime = Integer.parseInt(costTimeStr);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassCastException e) {
@@ -838,6 +850,7 @@ public class AXRobotPlatform {
         action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
         int failReasonValue = jsonObject.getIntValue("fail_reason");
         action.setMoveFailReason(MoveFailReason.valueOf(failReasonValue));
+        action.setCostTime(costTime);
         return action;
     }
 
