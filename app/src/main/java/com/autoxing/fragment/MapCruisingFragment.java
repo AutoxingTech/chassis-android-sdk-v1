@@ -22,7 +22,7 @@ import com.autoxing.robot_core.AXRobotPlatform;
 import com.autoxing.robot_core.IMappingListener;
 import com.autoxing.robot_core.action.ActionStatus;
 import com.autoxing.robot_core.action.MoveAction;
-import com.autoxing.robot_core.bean.ChassisStatus;
+import com.autoxing.robot_core.bean.ChassisControlMode;
 import com.autoxing.robot_core.bean.Location;
 import com.autoxing.robot_core.bean.Map;
 import com.autoxing.robot_core.bean.MoveOption;
@@ -267,7 +267,7 @@ public class MapCruisingFragment extends Fragment implements View.OnClickListene
     @Override
     public void onResume() {
         super.onResume();
-        RobotUtil.setChassisStatus(getActivity(), ChassisStatus.AUTO);
+        RobotUtil.setChassisControlMode(getActivity(), ChassisControlMode.AUTO);
         mBackground = false;
     }
 

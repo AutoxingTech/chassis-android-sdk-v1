@@ -4,10 +4,16 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.autoxing.robot_core.action.ActionStatus;
+import com.autoxing.robot_core.action.MoveFailReason;
 import com.autoxing.robot_core.action.Path;
-import com.autoxing.robot_core.bean.ChassisStatus;
+import com.autoxing.robot_core.bean.AlertCode;
+import com.autoxing.robot_core.bean.AlertInfo;
+import com.autoxing.robot_core.bean.AlertLevel;
+import com.autoxing.robot_core.bean.AlertTopic;
+import com.autoxing.robot_core.bean.BatteryStateTopic;
+import com.autoxing.robot_core.bean.ChassisControlMode;
 import com.autoxing.robot_core.action.MoveAction;
-import com.autoxing.robot_core.geometry.Line;
+import com.autoxing.robot_core.bean.ChassisStatusTopic;
 import com.autoxing.robot_core.bean.Location;
 import com.autoxing.robot_core.bean.Map;
 import com.autoxing.robot_core.bean.Mapping;
@@ -16,6 +22,7 @@ import com.autoxing.robot_core.bean.MoveOption;
 import com.autoxing.robot_core.bean.OccupancyGridTopic;
 import com.autoxing.robot_core.bean.Pose;
 import com.autoxing.robot_core.bean.PoseTopic;
+import com.autoxing.robot_core.bean.PowerSupplyStatus;
 import com.autoxing.robot_core.bean.Rotation;
 import com.autoxing.robot_core.bean.TopicBase;
 import com.autoxing.robot_core.util.NetUtil;
@@ -52,7 +59,7 @@ public class AXRobotPlatform {
     private ReconnectingWebSocketClient mWebSocketClient = null;
     private List<IMappingListener> mListeners = new ArrayList<>();
 
-    private List<TopicBase> mOccupancyGrids = new ArrayList<>();
+    private List<TopicBase> mtopics = new ArrayList<>();
 
     private Pose mPose = null;
 
@@ -96,8 +103,8 @@ public class AXRobotPlatform {
     private void notifyDataChanged() {
         for (int i = 0; i < mListeners.size(); ++i) {
             IMappingListener listener = mListeners.get(i);
-            for (int j = 0; j < mOccupancyGrids.size(); ++j) {
-                mListeners.get(i).onDataChanged(mOccupancyGrids.get(j));
+            for (int j = 0; j < mtopics.size(); ++j) {
+                mListeners.get(i).onDataChanged(mtopics.get(j));
             }
         }
     }
@@ -117,55 +124,25 @@ public class AXRobotPlatform {
     private void parseTopicData(String data) {
         JSONObject root = JSON.parseObject(data);
         JSONArray topics = root.getJSONArray("topics");
-        mOccupancyGrids.clear();
+        mtopics.clear();
         if (topics != null) {
             for (int i = 0; i < topics.size(); i++) {
                 JSONObject topicJson = topics.getJSONObject(i);
                 String topicName = topicJson.getString("topic");
                 if (topicName.equals("/chassis/occupancy_grid")) {
-                    OccupancyGridTopic topic = new OccupancyGridTopic();
-                    topic.setTopic(topicJson.getString("topic"));
-                    topic.setStamp(topicJson.getLong("stamp"));
-                    topic.setData(topicJson.getString("data"));
-                    topic.setResolution(topicJson.getFloat("resolution"));
-
-                    JSONArray origins = topicJson.getJSONArray("origin");
-                    topic.setOriginX(origins.getFloat(0));
-                    topic.setOriginY(origins.getFloat(1));
-                    mOccupancyGrids.add(topic);
+                    mtopics.add(parseChassisOccupancyGrid(topicJson));
                 } else if (topicName.equals("/chassis/pose")) {
-                    PoseTopic topic = new PoseTopic();
-                    topic.setTopic(topicJson.getString("topic"));
-                    topic.setStamp(topicJson.getLong("stamp"));
-
-                    Pose pose = new Pose();
-                    JSONArray positions = topicJson.getJSONArray("pos");
-                    pose.setX(positions.getFloat(0));
-                    pose.setY(positions.getFloat(1));
-                    pose.setZ(0);
-
-                    pose.setYaw(topicJson.getFloat("ori"));
-
-                    mPose = pose;
-                    topic.setPose(pose);
-                    mOccupancyGrids.add(topic);
+                    mtopics.add(parseChassisPose(topicJson));
                 } else if (topicName.equals("/positioning_qualities")) {
-                    boolean reliable = topicJson.getBoolean("reliable");
-                    if (reliable) {
-                        mLocalizationQuality = 100;
-                    } else {
-                        mLocalizationQuality = 0;
-                    }
+                    parsePositioningQualities(topicJson);
                 } else if (topicName.equals("/chassis/path")) {
-                    JSONArray positions = topicJson.getJSONArray("positions");
-                    int pointCount = positions.size();
-                    Vector<Location> locations = new Vector<>(pointCount);
-                    for (int j = 0; j < pointCount; j++) {
-                        JSONArray position = positions.getJSONArray(j);
-                        Location location = new Location(position.getFloat(0), position.getFloat(1), 0);
-                        locations.add(location);
-                    }
-                    mPath = new Path(locations);
+                    parseChassisPath(topicJson);
+                } else if (topicName.equals("/chassis_state")) {
+                    mtopics.add(parseChassisState(topicJson));
+                } else if (topicName.equals("/alerts")) {
+                    mtopics.add(parseAlerts(topicJson));
+                } else if (topicName.equals("/battery_state")) {
+                    mtopics.add(parseBatteryState(topicJson));
                 }
             }
         }
@@ -183,6 +160,9 @@ public class AXRobotPlatform {
                 mWebSocketClient.send("{\"enable_topic\": \"/tracked_pose\"}");
                 mWebSocketClient.send("{\"enable_topic\": \"/map\"}");
                 mWebSocketClient.send("{\"enable_topic\": \"/path\"}");
+                mWebSocketClient.send("{\"enable_topic\": \"/chassis_state\"}");
+                mWebSocketClient.send("{\"enable_topic\": \"/alerts\"}");
+                mWebSocketClient.send("{\"enable_topic\": \"/battery_state\"}");
 
                 String status = handshakedata.getHttpStatusMessage();
                 notifyConnected(status);
@@ -206,6 +186,109 @@ public class AXRobotPlatform {
         mWebSocketClient.connect();
     }
 
+    private OccupancyGridTopic parseChassisOccupancyGrid(JSONObject topicJson) {
+        OccupancyGridTopic topic = new OccupancyGridTopic();
+        topic.setTopic(topicJson.getString("topic"));
+        topic.setTimestamp(topicJson.getLongValue("stamp"));
+        topic.setData(topicJson.getString("data"));
+        topic.setResolution(topicJson.getFloatValue("resolution"));
+
+        JSONArray origins = topicJson.getJSONArray("origin");
+        topic.setOriginX(origins.getFloatValue(0));
+        topic.setOriginY(origins.getFloatValue(1));
+        return topic;
+    }
+
+    private PoseTopic parseChassisPose(JSONObject topicJson) {
+        PoseTopic topic = new PoseTopic();
+        topic.setTopic(topicJson.getString("topic"));
+        topic.setTimestamp(topicJson.getLongValue("stamp"));
+
+        Pose pose = new Pose();
+        JSONArray positions = topicJson.getJSONArray("pos");
+        pose.setX(positions.getFloatValue(0));
+        pose.setY(positions.getFloatValue(1));
+        pose.setZ(0);
+
+        pose.setYaw(topicJson.getFloatValue("ori"));
+
+        mPose = pose;
+        topic.setPose(pose);
+        return topic;
+    }
+
+    private void parsePositioningQualities(JSONObject topicJson) {
+        boolean reliable = topicJson.getBooleanValue("reliable");
+        if (reliable) {
+            mLocalizationQuality = 100;
+        } else {
+            mLocalizationQuality = 0;
+        }
+    }
+
+    private void parseChassisPath(JSONObject topicJson) {
+        JSONArray positions = topicJson.getJSONArray("positions");
+        int pointCount = positions.size();
+        Vector<Location> locations = new Vector<>(pointCount);
+        for (int j = 0; j < pointCount; j++) {
+            JSONArray position = positions.getJSONArray(j);
+            Location location = new Location(position.getFloatValue(0), position.getFloatValue(1), 0);
+            locations.add(location);
+        }
+        mPath = new Path(locations);
+    }
+
+    private ChassisStatusTopic parseChassisState(JSONObject topicJson) {
+        JSONObject parts = topicJson.getJSONObject("parts");
+        String controlMode = parts.getString("control_mode").toUpperCase();
+
+        ChassisStatusTopic topic = new ChassisStatusTopic();
+        topic.setControlMode(ChassisControlMode.valueOf(controlMode));
+        topic.setEmergencyStopPressed(parts.getBooleanValue("emergency_stop_pressed"));
+        return topic;
+    }
+
+    private AlertTopic parseAlerts(JSONObject topicJson) {
+        AlertTopic topic =  new AlertTopic();
+        JSONArray parts = topicJson.getJSONArray("parts");
+        int partCount = parts.size();
+        for (int j = 0; j < partCount; j++) {
+            JSONObject part = parts.getJSONObject(j);
+            JSONArray alerts = part.getJSONArray("alerts");
+            int alertCount = alerts.size();
+            for (int m = 0; m < alertCount; ++m) {
+                JSONObject alertInfoJson = alerts.getJSONObject(m);
+                int code = alertInfoJson.getIntValue("code");
+                String levelMessage = alertInfoJson.getString("level");
+
+                AlertInfo alertInfo = new AlertInfo();
+                alertInfo.setCode(AlertCode.valueOf(code));
+                alertInfo.setLevel(AlertLevel.valueOf(levelMessage.toUpperCase()));
+                alertInfo.setMessage(alertInfoJson.getString("msg"));
+                topic.addAlertInfo(alertInfo);
+            }
+            topic.setPartName(part.getString("part_name"));
+        }
+        return topic;
+    }
+
+    private BatteryStateTopic parseBatteryState(JSONObject topicJson) {
+        long timestamp = topicJson.getLongValue("secs");
+        float voltage = topicJson.getFloatValue("voltage");
+        float current = topicJson.getFloatValue("current");
+        float percentage = topicJson.getFloatValue("percentage");
+        String powerSupplyStatus = topicJson.getString("power_supply_status");
+
+        BatteryStateTopic topic =  new BatteryStateTopic();
+        topic.setTimestamp(timestamp);
+        topic.setVoltage(voltage);
+        topic.setCurrent(current);
+        topic.setPercentage(percentage);
+        topic.setPowerSupplyStatus(PowerSupplyStatus.valueOf(powerSupplyStatus.toUpperCase()));
+
+        return topic;
+    }
+
     public String getDeviceId() {
         return "81811061000021b";
     }
@@ -218,9 +301,19 @@ public class AXRobotPlatform {
         return false;
     }
 
-    public boolean setChassisStatus(ChassisStatus status) {
+    public boolean setControlMode(ChassisControlMode mode) {
         HashMap hashmap = new HashMap();
-        hashmap.put("control_mode", status.toString().toLowerCase());
+        hashmap.put("control_mode", mode.toString().toLowerCase());
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_STATUS), hashmap, NetUtil.HTTP_METHOD.patch);
+        if (res == null)
+            return false;
+
+        return res.code() == 200;
+    }
+
+    public boolean setEmergencyStopPressed(boolean stopPressed) {
+        HashMap hashmap = new HashMap();
+        hashmap.put("emergency_stop_pressed", stopPressed);
         Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_STATUS), hashmap, NetUtil.HTTP_METHOD.patch);
         if (res == null)
             return false;
@@ -621,6 +714,8 @@ public class AXRobotPlatform {
         action.setId(jsonObject.getInteger("id"));
         String stateStr = jsonObject.getString("state");
         action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
+        int failReasonValue = jsonObject.getIntValue("fail_reason");
+        action.setMoveFailReason(MoveFailReason.valueOf(failReasonValue));
         return action;
     }
 
@@ -650,6 +745,8 @@ public class AXRobotPlatform {
         action.setId(jsonObject.getInteger("id"));
         String stateStr = jsonObject.getString("state");
         action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
+        int failReasonValue = jsonObject.getIntValue("fail_reason");
+        action.setMoveFailReason(MoveFailReason.valueOf(failReasonValue));
         return action;
     }
 
@@ -669,6 +766,8 @@ public class AXRobotPlatform {
                 moveAction.setId(jsonObject.getInteger("id"));
                 String stateStr = jsonObject.getString("state");
                 moveAction.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
+                int failReasonValue = jsonObject.getIntValue("fail_reason");
+                moveAction.setMoveFailReason(MoveFailReason.valueOf(failReasonValue));
                 moveActions.add(moveAction);
             }
         }
@@ -676,7 +775,7 @@ public class AXRobotPlatform {
     }
 
     public MoveAction getCurrentAction() {
-        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES) + "/latest", NetUtil.HTTP_METHOD.get);
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES) + "/current", NetUtil.HTTP_METHOD.get);
         if (res == null)
             return null;
 
@@ -699,6 +798,8 @@ public class AXRobotPlatform {
         action.setId(jsonObject.getInteger("id"));
         String stateStr = jsonObject.getString("state");
         action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
+        int failReasonValue = jsonObject.getIntValue("fail_reason");
+        action.setMoveFailReason(MoveFailReason.valueOf(failReasonValue));
         return action;
     }
 
@@ -744,6 +845,8 @@ public class AXRobotPlatform {
         action.setId(jsonObject.getInteger("id"));
         String stateStr = jsonObject.getString("state");
         action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
+        int failReasonValue = jsonObject.getIntValue("fail_reason");
+        action.setMoveFailReason(MoveFailReason.valueOf(failReasonValue));
         return action;
     }
 

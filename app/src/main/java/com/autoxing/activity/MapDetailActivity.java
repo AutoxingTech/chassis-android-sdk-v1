@@ -22,7 +22,7 @@ import com.autoxing.fragment.MapCruisingFragment;
 import com.autoxing.fragment.MapManualFragment;
 import com.autoxing.fragment.MapRemoteFragment;
 import com.autoxing.robot_core.AXRobotPlatform;
-import com.autoxing.robot_core.bean.ChassisStatus;
+import com.autoxing.robot_core.bean.ChassisControlMode;
 import com.autoxing.robot_core.bean.Map;
 import com.autoxing.util.RobotUtil;
 import com.autoxing.view.CustomViewPager;
@@ -186,7 +186,7 @@ public class MapDetailActivity extends BaseActivity {
     protected void onDestroy() {
         super.onDestroy();
         removeCurrentMap();
-        RobotUtil.setChassisStatus(this, ChassisStatus.MANUAL);
+        RobotUtil.setChassisControlMode(this, ChassisControlMode.MANUAL);
     }
 
     private void removeCurrentMap() {

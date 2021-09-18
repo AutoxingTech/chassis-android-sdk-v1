@@ -38,10 +38,11 @@ public class MoveAction extends IAction {
         return succ;
     }
 
+    // not used
     @Override
     public Path getRemainingPath() { return new Path(); }
 
-    private ActionStatus getCurrentStatus() {
+    public ActionStatus getCurrentStatus() {
         Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES) + "/" + this.mId +  "?format=json", NetUtil.HTTP_METHOD.get);
         if (res == null)
             return ActionStatus.FAILED;
@@ -63,6 +64,8 @@ public class MoveAction extends IAction {
 
         String stateStr = jsonObject.getString("state");
         mStatus = ActionStatus.valueOf(stateStr.toUpperCase());
+        int failReasonValue = jsonObject.getIntValue("fail_reason");
+        mFailReason= MoveFailReason.valueOf(failReasonValue);
         return mStatus;
     }
 }

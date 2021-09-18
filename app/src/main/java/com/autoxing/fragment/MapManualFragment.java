@@ -17,7 +17,7 @@ import android.widget.Toast;
 import com.autoxing.controller.R;
 import com.autoxing.robot_core.AXRobotPlatform;
 import com.autoxing.robot_core.IMappingListener;
-import com.autoxing.robot_core.bean.ChassisStatus;
+import com.autoxing.robot_core.bean.ChassisControlMode;
 import com.autoxing.robot_core.bean.Location;
 import com.autoxing.robot_core.bean.Map;
 import com.autoxing.robot_core.bean.PoseTopic;
@@ -117,7 +117,7 @@ public class MapManualFragment extends Fragment implements IMappingListener {
     @Override
     public void onResume() {
         super.onResume();
-        RobotUtil.setChassisStatus(getActivity(), ChassisStatus.MANUAL);
+        RobotUtil.setChassisControlMode(getActivity(), ChassisControlMode.MANUAL);
     }
 
     @Override

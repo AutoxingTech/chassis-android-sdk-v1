@@ -1,6 +1,6 @@
 package com.autoxing.robot_core.bean;
 
-public enum ChassisStatus {
+public enum ChassisControlMode {
     AUTO,
     MANUAL,
     REMOTE

@@ -21,7 +21,7 @@ import com.autoxing.controller.R;
 import com.autoxing.robot_core.AXRobotPlatform;
 import com.autoxing.robot_core.IMappingListener;
 import com.autoxing.robot_core.action.ActionStatus;
-import com.autoxing.robot_core.bean.ChassisStatus;
+import com.autoxing.robot_core.bean.ChassisControlMode;
 import com.autoxing.robot_core.bean.Location;
 import com.autoxing.robot_core.bean.Map;
 import com.autoxing.robot_core.action.MoveAction;
@@ -321,7 +321,7 @@ public class MapAutoFragment extends Fragment implements View.OnClickListener, I
     @Override
     public void onResume() {
         super.onResume();
-        RobotUtil.setChassisStatus(getActivity(), ChassisStatus.AUTO);
+        RobotUtil.setChassisControlMode(getActivity(), ChassisControlMode.AUTO);
     }
 
     @Override

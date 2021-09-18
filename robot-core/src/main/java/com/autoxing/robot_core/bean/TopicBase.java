@@ -2,21 +2,21 @@ package com.autoxing.robot_core.bean;
 
 public class TopicBase {
     private String mTopic;
-    private long mStamp;
+    private long mTimestamp;
 
     public TopicBase() {
         mTopic = null;
-        mStamp = 0l;
+        mTimestamp = 0l;
     }
 
-    public TopicBase(String topic, long stamp) {
-        this.mTopic = topic;
-        this.mStamp = stamp;
+    public TopicBase(String topic, long timestamp) {
+        mTopic = topic;
+        mTimestamp = timestamp;
     }
 
-    public String getTopic() { return this.mTopic; }
-    public void setTopic(String topic) { this.mTopic = topic; }
+    public String getTopic() { return mTopic; }
+    public void setTopic(String topic) { mTopic = topic; }
 
-    public long getStamp() { return this.mStamp; }
-    public void setStamp(long stamp) { this.mStamp = stamp; }
+    public long getTimestamp() { return mTimestamp; }
+    public void setTimestamp(long timestamp) { mTimestamp = timestamp; }
 }
