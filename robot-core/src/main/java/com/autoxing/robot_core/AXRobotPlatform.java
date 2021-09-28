@@ -59,8 +59,6 @@ public class AXRobotPlatform {
     private ReconnectingWebSocketClient mWebSocketClient = null;
     private List<IMappingListener> mListeners = new ArrayList<>();
 
-    private List<TopicBase> mtopics = new ArrayList<>();
-
     private Pose mPose = null;
 
     private int mLocalizationQuality = 0;
@@ -100,12 +98,10 @@ public class AXRobotPlatform {
         NetUtil.enableBlockingThread(enabled);
     }
 
-    private void notifyDataChanged() {
+    private void notifyDataChanged(TopicBase topic) {
         for (int i = 0; i < mListeners.size(); ++i) {
             IMappingListener listener = mListeners.get(i);
-            for (int j = 0; j < mtopics.size(); ++j) {
-                mListeners.get(i).onDataChanged(mtopics.get(j));
-            }
+            mListeners.get(i).onDataChanged(topic);
         }
     }
 
@@ -122,31 +118,31 @@ public class AXRobotPlatform {
     }
 
     private void parseTopicData(String data) {
-        JSONObject root = JSON.parseObject(data);
-        JSONArray topics = root.getJSONArray("topics");
-        mtopics.clear();
-        if (topics != null) {
-            for (int i = 0; i < topics.size(); i++) {
-                JSONObject topicJson = topics.getJSONObject(i);
-                String topicName = topicJson.getString("topic");
-                if (topicName.equals("/chassis/occupancy_grid")) {
-                    mtopics.add(parseChassisOccupancyGrid(topicJson));
-                } else if (topicName.equals("/chassis/pose")) {
-                    mtopics.add(parseChassisPose(topicJson));
-                } else if (topicName.equals("/positioning_qualities")) {
-                    parsePositioningQualities(topicJson);
-                } else if (topicName.equals("/chassis/path")) {
-                    parseChassisPath(topicJson);
-                } else if (topicName.equals("/chassis_state")) {
-                    mtopics.add(parseChassisState(topicJson));
-                } else if (topicName.equals("/alerts")) {
-                    mtopics.add(parseAlerts(topicJson));
-                } else if (topicName.equals("/battery_state")) {
-                    mtopics.add(parseBatteryState(topicJson));
-                }
-            }
+        JSONObject topicJson = JSON.parseObject(data);
+        String topicName = topicJson.getString("topic");
+        if (topicName == null)
+            return;
+
+        TopicBase topic = null;
+        if (topicName.equals("/chassis/occupancy_grid")) {
+            topic = parseChassisOccupancyGrid(topicJson);
+        } else if (topicName.equals("/chassis/pose")) {
+            topic = parseChassisPose(topicJson);
+        } else if (topicName.equals("/positioning_qualities")) {
+            parsePositioningQualities(topicJson);
+        } else if (topicName.equals("/chassis/path")) {
+            parseChassisPath(topicJson);
+        } else if (topicName.equals("/chassis_state")) {
+            topic = parseChassisState(topicJson);
+        } else if (topicName.equals("/alerts")) {
+            topic = parseAlerts(topicJson);
+        } else if (topicName.equals("/battery_state")) {
+            topic = parseBatteryState(topicJson);
         }
-        notifyDataChanged();
+
+        if (topic != null) {
+            notifyDataChanged(topic);
+        }
     }
 
     private void startWebSocket() {
