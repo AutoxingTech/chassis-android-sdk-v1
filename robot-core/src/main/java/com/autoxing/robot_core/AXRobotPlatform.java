@@ -246,25 +246,20 @@ public class AXRobotPlatform {
 
     private AlertTopic parseAlerts(JSONObject topicJson) {
         AlertTopic topic =  new AlertTopic();
-        JSONArray parts = topicJson.getJSONArray("parts");
-        int partCount = parts.size();
-        for (int j = 0; j < partCount; j++) {
-            JSONObject part = parts.getJSONObject(j);
-            JSONArray alerts = part.getJSONArray("alerts");
-            int alertCount = alerts.size();
-            for (int m = 0; m < alertCount; ++m) {
-                JSONObject alertInfoJson = alerts.getJSONObject(m);
-                int code = alertInfoJson.getIntValue("code");
-                String levelMessage = alertInfoJson.getString("level");
+        JSONArray alerts = topicJson.getJSONArray("alerts");
+        int alertCount = alerts.size();
+        for (int m = 0; m < alertCount; ++m) {
+            JSONObject alertInfoJson = alerts.getJSONObject(m);
+            int code = alertInfoJson.getIntValue("code");
+            String levelMessage = alertInfoJson.getString("level");
 
-                AlertInfo alertInfo = new AlertInfo();
-                alertInfo.setCode(AlertCode.valueOf(code));
-                alertInfo.setLevel(AlertLevel.valueOf(levelMessage.toUpperCase()));
-                alertInfo.setMessage(alertInfoJson.getString("msg"));
-                topic.addAlertInfo(alertInfo);
-            }
-            topic.setPartName(part.getString("part_name"));
+            AlertInfo alertInfo = new AlertInfo();
+            alertInfo.setCode(AlertCode.valueOf(code));
+            alertInfo.setLevel(AlertLevel.valueOf(levelMessage.toUpperCase()));
+            alertInfo.setMessage(alertInfoJson.getString("msg"));
+            topic.addAlertInfo(alertInfo);
         }
+        topic.setPartName(topicJson.getString("part_name"));
         return topic;
     }
 
