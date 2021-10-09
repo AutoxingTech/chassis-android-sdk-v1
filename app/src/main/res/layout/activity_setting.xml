@@ -21,14 +21,14 @@
                 android:layout_height="wrap_content"
                 android:text="Server:"
                 android:layout_alignBaseline="@id/spinner"
-                android:layout_marginLeft="50dp"/>
+                android:layout_marginLeft="15dp"/>
 
             <org.angmarch.views.NiceSpinner
                 android:id="@+id/spinner"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:backgroundSelector="@drawable/background_selector"
-                android:layout_marginLeft="15dp"
+                android:layout_marginLeft="5dp"
                 android:layout_toRightOf="@id/tv_server"/>
 
         </RelativeLayout>
