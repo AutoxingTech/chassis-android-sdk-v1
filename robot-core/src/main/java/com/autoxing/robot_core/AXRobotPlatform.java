@@ -235,12 +235,11 @@ public class AXRobotPlatform {
     }
 
     private ChassisStatusTopic parseChassisState(JSONObject topicJson) {
-        JSONObject parts = topicJson.getJSONObject("parts");
-        String controlMode = parts.getString("control_mode").toUpperCase();
+        String controlMode = topicJson.getString("control_mode").toUpperCase();
 
         ChassisStatusTopic topic = new ChassisStatusTopic();
         topic.setControlMode(ChassisControlMode.valueOf(controlMode));
-        topic.setEmergencyStopPressed(parts.getBooleanValue("emergency_stop_pressed"));
+        topic.setEmergencyStopPressed(topicJson.getBooleanValue("emergency_stop_pressed"));
         return topic;
     }
 
@@ -863,5 +862,24 @@ public class AXRobotPlatform {
             return false;
 
         return res.code() == 200;
+    }
+
+    public boolean seMaxLinearVelocity(float velocity) {
+        return seRobotParams("/wheel_control/max_linear_velocity", velocity);
+    }
+
+    public boolean seMaxAngularVelocity(float velocity) {
+        return seRobotParams("/wheel_control/max_angular_velocity", velocity);
+    }
+
+    private boolean seRobotParams(String paramKey, float velocity) {
+        HashMap hashMap = new HashMap();
+        hashMap.put(paramKey, velocity);
+
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_ROBOT_PARAMS), hashMap, NetUtil.HTTP_METHOD.post);
+        if (res == null)
+            return false;
+
+        return res.code() / 100 == 2;
     }
 }

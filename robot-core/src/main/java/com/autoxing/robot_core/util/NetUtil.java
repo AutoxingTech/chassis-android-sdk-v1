@@ -32,6 +32,7 @@ public class NetUtil {
     public static final String SERVICE_CHASSIS_CURRENT_MAP = "/chassis/current-map";
     public static final String SERVICE_CHASSIS_REMOTE_ACTION = "/chassis/remote/action";
     public static final String SERVICE_CHASSIS_REMOTE_TWIST = "/chassis/remote/twist";
+    public static final String SERVICE_ROBOT_PARAMS = "/robot-params";
     public static final String SERVICE_WS_TOPICS = "/ws/topics";
 
     //public static final String SERVICE_TOKEN_KEY = "Authorization";
