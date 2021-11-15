@@ -840,6 +840,108 @@ public class AXRobotPlatform {
         return action;
     }
 
+    public MoveAction dockWithConveyer(Location location, float yaw, int retryCount) {
+        HashMap hashMap = new HashMap();
+        hashMap.put("target_x", location.getX());
+        hashMap.put("target_y",location.getY());
+        hashMap.put("target_z",location.getZ());
+        hashMap.put("target_ori", yaw);
+        hashMap.put("type", "dockWithConveyer");
+        hashMap.put("charge_retry_count", retryCount);
+
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES), hashMap, NetUtil.HTTP_METHOD.post);
+        if (res == null)
+            return null;
+
+        if (res.code() / 100 != 2)
+            return null;
+
+        JSONObject jsonObject = null;
+        try {
+            jsonObject = JSON.parseObject(res.body().string());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassCastException e) {
+            e.printStackTrace();
+        }
+
+        if (jsonObject == null)
+            return null;
+
+        MoveAction action = new MoveAction();
+        action.setId(jsonObject.getInteger("id"));
+        String stateStr = jsonObject.getString("state");
+        action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
+        int failReasonValue = jsonObject.getIntValue("fail_reason");
+        action.setMoveFailReason(MoveFailReason.valueOf(failReasonValue));
+        return action;
+    }
+
+    public MoveAction approachConveyer(int retryCount) {
+        HashMap hashMap = new HashMap();
+        hashMap.put("type", "approachConveyer");
+        hashMap.put("charge_retry_count", retryCount);
+
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES), hashMap, NetUtil.HTTP_METHOD.post);
+        if (res == null)
+            return null;
+
+        if (res.code() / 100 != 2)
+            return null;
+
+        JSONObject jsonObject = null;
+        try {
+            jsonObject = JSON.parseObject(res.body().string());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassCastException e) {
+            e.printStackTrace();
+        }
+
+        if (jsonObject == null)
+            return null;
+
+        MoveAction action = new MoveAction();
+        action.setId(jsonObject.getInteger("id"));
+        String stateStr = jsonObject.getString("state");
+        action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
+        int failReasonValue = jsonObject.getIntValue("fail_reason");
+        action.setMoveFailReason(MoveFailReason.valueOf(failReasonValue));
+        return action;
+    }
+
+    public MoveAction leaveConveyer() {
+        HashMap hashMap = new HashMap();
+        hashMap.put("type", "leaveConveyer");
+
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES), hashMap, NetUtil.HTTP_METHOD.post);
+        if (res == null)
+            return null;
+
+        if (res.code() / 100 != 2)
+            return null;
+
+        JSONObject jsonObject = null;
+        try {
+            jsonObject = JSON.parseObject(res.body().string());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassCastException e) {
+            e.printStackTrace();
+        }
+
+        if (jsonObject == null)
+            return null;
+
+        MoveAction action = new MoveAction();
+        action.setId(jsonObject.getInteger("id"));
+        String stateStr = jsonObject.getString("state");
+        action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
+        int failReasonValue = jsonObject.getIntValue("fail_reason");
+        action.setMoveFailReason(MoveFailReason.valueOf(failReasonValue));
+        return action;
+    }
+
     public boolean moveWithTwist(float velocityY, float angularVelocityZ) {
         HashMap hashmap = new HashMap();
 
