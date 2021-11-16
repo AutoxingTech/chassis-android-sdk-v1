@@ -805,10 +805,13 @@ public class AXRobotPlatform {
 
     public MoveAction goHome(Location location, float yaw, int retryCount) {
         HashMap hashMap = new HashMap();
-        hashMap.put("target_x",location.getX());
-        hashMap.put("target_y",location.getY());
-        hashMap.put("target_z",location.getZ());
-        hashMap.put("target_ori", yaw);
+        if (location != null)
+        {
+            hashMap.put("target_x",location.getX());
+            hashMap.put("target_y",location.getY());
+            hashMap.put("target_z",location.getZ());
+            hashMap.put("target_ori", yaw);
+        }
         hashMap.put("is_charging", true);
         hashMap.put("charge_retry_count", retryCount);
 
@@ -842,10 +845,13 @@ public class AXRobotPlatform {
 
     public MoveAction dockWithConveyer(Location location, float yaw, int retryCount) {
         HashMap hashMap = new HashMap();
-        hashMap.put("target_x", location.getX());
-        hashMap.put("target_y",location.getY());
-        hashMap.put("target_z",location.getZ());
-        hashMap.put("target_ori", yaw);
+        if (location != null)
+        {
+            hashMap.put("target_x", location.getX());
+            hashMap.put("target_y",location.getY());
+            hashMap.put("target_z",location.getZ());
+            hashMap.put("target_ori", yaw);
+        }
         hashMap.put("type", "dockWithConveyer");
         hashMap.put("charge_retry_count", retryCount);
 
