@@ -852,7 +852,7 @@ public class AXRobotPlatform {
             hashMap.put("target_z",location.getZ());
             hashMap.put("target_ori", yaw);
         }
-        hashMap.put("type", "dockWithConveyer");
+        hashMap.put("type", "dock_with_conveyer");
         hashMap.put("charge_retry_count", retryCount);
 
         Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES), hashMap, NetUtil.HTTP_METHOD.post);
@@ -885,7 +885,7 @@ public class AXRobotPlatform {
 
     public MoveAction approachConveyer(int retryCount) {
         HashMap hashMap = new HashMap();
-        hashMap.put("type", "approachConveyer");
+        hashMap.put("type", "approach_conveyer");
         hashMap.put("charge_retry_count", retryCount);
 
         Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES), hashMap, NetUtil.HTTP_METHOD.post);
@@ -918,7 +918,7 @@ public class AXRobotPlatform {
 
     public MoveAction leaveConveyer() {
         HashMap hashMap = new HashMap();
-        hashMap.put("type", "leaveConveyer");
+        hashMap.put("type", "leave_conveyer");
 
         Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES), hashMap, NetUtil.HTTP_METHOD.post);
         if (res == null)
