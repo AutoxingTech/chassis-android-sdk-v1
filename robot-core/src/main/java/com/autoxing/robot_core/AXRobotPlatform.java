@@ -740,6 +740,58 @@ public class AXRobotPlatform {
         return action;
     }
 
+    public MoveAction moveToWithGivenRoute(Path path, Location location, MoveOption option, float yaw, float detourTolerance) {
+        if (path == null)
+            return null;
+
+        HashMap hashMap = new HashMap();
+        hashMap.put("type", "along_given_route");
+        hashMap.put("target_x",location.getX());
+        hashMap.put("target_y",location.getY());
+        hashMap.put("target_z",location.getZ());
+        if (option.isWithYaw()) {
+            hashMap.put("target_ori", yaw);
+        }
+        hashMap.put("detour_tolerance", detourTolerance);
+
+        List coordinates = new ArrayList();
+        Vector<Location> pathPoints = path.getPoints();
+        for (Location point : pathPoints)
+        {
+            coordinates.add(point.getX());
+            coordinates.add(point.getY());
+        }
+
+        String coordinateStr = coordinates.toString();
+        hashMap.put("route_coordinates", coordinateStr.substring(1, coordinateStr.length() - 1));
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_CHASSIS_MOVES), hashMap, NetUtil.HTTP_METHOD.post);
+        if (res == null)
+            return null;
+
+        if (res.code() / 100 != 2)
+            return null;
+
+        JSONObject jsonObject = null;
+        try {
+            jsonObject = JSON.parseObject(res.body().string());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassCastException e) {
+            e.printStackTrace();
+        }
+
+        if (jsonObject == null)
+            return null;
+
+        MoveAction action = new MoveAction();
+        action.setId(jsonObject.getInteger("id"));
+        String stateStr = jsonObject.getString("state");
+        action.setStatus(ActionStatus.valueOf(stateStr.toUpperCase()));
+        int failReasonValue = jsonObject.getIntValue("fail_reason");
+        action.setMoveFailReason(MoveFailReason.valueOf(failReasonValue));
+        return action;
+    }
+
     public MoveAction rotateWithRelativeOrientation(Rotation rotation) {
         MoveAction action = new MoveAction();
         return action;
