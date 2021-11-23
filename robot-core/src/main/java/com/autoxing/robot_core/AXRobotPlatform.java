@@ -14,6 +14,7 @@ import com.autoxing.robot_core.bean.BatteryStateTopic;
 import com.autoxing.robot_core.bean.ChassisControlMode;
 import com.autoxing.robot_core.action.MoveAction;
 import com.autoxing.robot_core.bean.ChassisStatusTopic;
+import com.autoxing.robot_core.bean.DeviceStatus;
 import com.autoxing.robot_core.bean.Location;
 import com.autoxing.robot_core.bean.Map;
 import com.autoxing.robot_core.bean.Mapping;
@@ -279,16 +280,29 @@ public class AXRobotPlatform {
         return topic;
     }
 
-    public String getDeviceId() {
-        return "81811061000021b";
-    }
+    public DeviceStatus getDeviceStatus() {
+        Response res = NetUtil.syncReq2(NetUtil.getUrl(NetUtil.SERVICE_DEVICE_STATUS) + "?format=json", NetUtil.HTTP_METHOD.get);
 
-    public int getBatteryPercentage() {
-        return 50;
-    }
+        if (res == null)
+            return null;
 
-    public boolean getBatteryIsCharging() {
-        return false;
+        if (res.code() / 100 != 2)
+            return null;
+
+        JSONObject jsonObject = null;
+        try {
+            jsonObject = JSON.parseObject(res.body().string());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassCastException e) {
+            e.printStackTrace();
+        }
+
+        if (jsonObject == null)
+            return null;
+
+        DeviceStatus ds = new DeviceStatus(jsonObject);
+        return ds;
     }
 
     public boolean setControlMode(ChassisControlMode mode) {
